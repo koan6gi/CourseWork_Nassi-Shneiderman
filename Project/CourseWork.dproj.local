@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+  <Transactions>
+    <Transaction>2024.05.01 12:06:35.609,=D:\OneDrive\Документы\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2024.05.01 12:09:18.858,D:\OneDrive\Документы\Embarcadero\Studio\Projects\uMain.dfm=D:\OneDrive\Документы\Embarcadero\Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>2024.05.01 12:09:18.858,D:\OneDrive\Документы\Embarcadero\Studio\Projects\uMain.pas=D:\OneDrive\Документы\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2024.05.01 12:09:50.427,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uMain.pas=D:\OneDrive\Документы\Embarcadero\Studio\Projects\uMain.pas</Transaction>
+    <Transaction>2024.05.01 12:09:50.427,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uMain.dfm=D:\OneDrive\Документы\Embarcadero\Studio\Projects\uMain.dfm</Transaction>
+    <Transaction>2024.05.01 12:10:40.002,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\CourseWork.dproj=D:\OneDrive\Документы\Embarcadero\Studio\Projects\Project1.dproj</Transaction>
+  </Transactions>
+</BorlandProject>
