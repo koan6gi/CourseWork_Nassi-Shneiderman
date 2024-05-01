@@ -1,9 +1,10 @@
 object frmMain: TfrmMain
   Left = 0
   Top = 0
+  Width = 928
+  Height = 582
+  AutoScroll = True
   Caption = 'Nassi-Shneiderman diagram'
-  ClientHeight = 519
-  ClientWidth = 882
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -12,10 +13,10 @@ object frmMain: TfrmMain
   Font.Style = []
   Menu = MainMenu
   TextHeight = 15
-  object tbMain: TToolBar
+  object ToolBarMain: TToolBar
     Left = 0
     Top = 0
-    Width = 882
+    Width = 916
     Height = 33
     ButtonHeight = 33
     ButtonWidth = 41
@@ -23,6 +24,7 @@ object frmMain: TfrmMain
     ParentShowHint = False
     ShowHint = True
     TabOrder = 0
+    ExplicitWidth = 910
     object tbAddProcess: TToolButton
       Left = 0
       Top = 0
@@ -48,10 +50,20 @@ object frmMain: TfrmMain
       Action = actDiagramAddRepeat
     end
   end
+  object ScrollBoxMain: TScrollBox
+    Left = 0
+    Top = 33
+    Width = 916
+    Height = 486
+    Align = alClient
+    TabOrder = 1
+    ExplicitWidth = 910
+    ExplicitHeight = 477
+  end
   object ActionListMain: TActionList
     Images = ImageListMain
-    Left = 804
-    Top = 68
+    Left = 788
+    Top = 36
     object actFileNew: TAction
       Category = 'File'
       Caption = #1057#1086#1079#1076#1072#1090#1100
@@ -134,8 +146,8 @@ object frmMain: TfrmMain
   end
   object MainMenu: TMainMenu
     Images = ImageListMain
-    Left = 816
-    Top = 136
+    Left = 792
+    Top = 96
     object menuFile: TMenuItem
       Caption = #1060#1072#1081#1083
       object menuFileNew: TMenuItem
@@ -198,8 +210,8 @@ object frmMain: TfrmMain
     end
   end
   object ImageListMain: TImageList
-    Left = 800
-    Top = 224
+    Left = 792
+    Top = 160
     Bitmap = {
       494C01010A001800040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
