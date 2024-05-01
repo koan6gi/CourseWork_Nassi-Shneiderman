@@ -2,8 +2,8 @@ object frmMain: TfrmMain
   Left = 0
   Top = 0
   Caption = 'Nassi-Shneiderman diagram'
-  ClientHeight = 433
-  ClientWidth = 622
+  ClientHeight = 519
+  ClientWidth = 882
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -11,4 +11,8 @@ object frmMain: TfrmMain
   Font.Name = 'Segoe UI'
   Font.Style = []
   TextHeight = 15
+  object ActionListMain: TActionList
+    Left = 48
+    Top = 400
+  end
 end
