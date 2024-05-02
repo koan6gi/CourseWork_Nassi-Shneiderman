@@ -102,6 +102,10 @@
         <DCCReference Include="uMain.pas">
             <Form>frmMain</Form>
         </DCCReference>
+        <DCCReference Include="uEditInfoForm.pas">
+            <Form>frmEditInfo</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

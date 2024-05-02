@@ -12,6 +12,7 @@ object frmMain: TfrmMain
   Font.Name = 'Segoe UI'
   Font.Style = []
   Menu = MainMenu
+  OnCreate = frmMainCreate
   TextHeight = 15
   object ToolBarMain: TToolBar
     Left = 0
@@ -62,6 +63,7 @@ object frmMain: TfrmMain
   end
   object ActionListMain: TActionList
     Images = ImageListMain
+    OnChange = ActionListMainChange
     Left = 788
     Top = 36
     object actFileNew: TAction
@@ -122,21 +124,25 @@ object frmMain: TfrmMain
       Category = 'Diagram'
       Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1092#1091#1085#1082#1094#1080#1086#1085#1072#1083#1100#1085#1099#1081' '#1073#1083#1086#1082
       ImageIndex = 9
+      OnExecute = actDiagramAddProcessExecute
     end
     object actDiagramAddIF: TAction
       Category = 'Diagram'
       Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1073#1083#1086#1082' '#1088#1077#1096#1077#1085#1080#1103
       ImageIndex = 9
+      OnExecute = actDiagramAddIFExecute
     end
     object actDiagramAddWhile: TAction
       Category = 'Diagram'
       Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1073#1083#1086#1082' '#1094#1080#1082#1083#1072' '#1089' '#1087#1088#1077#1076#1091#1089#1083#1086#1074#1080#1077#1084
       ImageIndex = 9
+      OnExecute = actDiagramAddWhileExecute
     end
     object actDiagramAddRepeat: TAction
       Category = 'Diagram'
       Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1073#1083#1086#1082' '#1094#1080#1082#1083#1072' '#1089' '#1087#1086#1089#1090#1091#1089#1083#1086#1074#1080#1077#1084
       ImageIndex = 9
+      OnExecute = actDiagramAddRepeatExecute
     end
     object actDiagramDeleteBlock: TAction
       Category = 'Diagram'
