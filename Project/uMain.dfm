@@ -60,6 +60,13 @@ object frmMain: TfrmMain
     TabOrder = 1
     ExplicitWidth = 910
     ExplicitHeight = 477
+    object Image1: TImage
+      Left = 336
+      Top = 176
+      Width = 105
+      Height = 105
+      AutoSize = True
+    end
   end
   object ActionListMain: TActionList
     Images = ImageListMain

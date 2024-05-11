@@ -54,6 +54,7 @@ type
     tbAddWhile: TToolButton;
     tbDiagramAddRepeat: TToolButton;
     ScrollBoxMain: TScrollBox;
+    Image1: TImage;
     procedure BlockDblClick(Sender: TObject);
     procedure BlockClick(Sender: TObject);
     procedure actDiagramAddProcessExecute(Sender: TObject);
@@ -81,7 +82,7 @@ const
     '¬ведите условие выхода из цикла');
 
 var
-  StdLeft: Integer = 50;
+  StdLeft: Integer = 150;
   StdWidth: Integer = 150;
   StdHeight: Integer = 100;
   StdTop: Integer = 10;
@@ -96,17 +97,18 @@ begin
   with Block do
   begin
     Canvas.Pen.Color := clBlack;
-    Block.Canvas.Rectangle(0, 0, Width - 1, Height);
+    Block.Canvas.Rectangle(0, 0, Width, Height);
   end;
 end;
 
 procedure PaintIFBlock(var Block: TImage);
-var y: Integer;
-Tr: Array [1..3] of TPoint;
+var
+  y: Integer;
+  Tr: Array [1 .. 3] of TPoint;
 begin
   with Block do
   begin
-    Block.Canvas.Rectangle(0, 0, Width - 1, Height);
+    Block.Canvas.Rectangle(0, 0, Width, Height);
     y := Height div 2;
     Canvas.MoveTo(0, y);
     Canvas.LineTo(Width, y);
@@ -123,8 +125,8 @@ procedure PaintWhileBlock(var Block: TImage);
 begin
   with Block do
   begin
-    Block.Canvas.Rectangle(0, 0, Width - 1, Height);
-    Block.Canvas.Rectangle(Width div 5, Height div 3, Width - 1, Height);
+    Block.Canvas.Rectangle(0, 0, Block.Width, Height);
+    Block.Canvas.Rectangle(Width div 5, Height div 3, Width, Height);
   end;
 end;
 
@@ -132,8 +134,8 @@ procedure PaintRepeatBlock(var Block: TImage);
 begin
   with Block do
   begin
-    Block.Canvas.Rectangle(0, 0, Width - 1, Height);
-    Block.Canvas.Rectangle(Width div 5, 2 * Height div 3, Width , 0);
+    Block.Canvas.Rectangle(0, 0, Width, Height);
+    Block.Canvas.Rectangle(Width div 5, 2 * Height div 3, Width, 0);
   end;
 end;
 
@@ -152,17 +154,20 @@ begin
   with Block do
   begin
     Parent := frmMain.ScrollBoxMain;
+
     Canvas.Pen.Color := clBlack;
     Canvas.Brush.Color := clWhite;
-    Height := StdHeight;
-    Width := StdWidth;
-    Top := StdTop;
-    Left := StdLeft;
+
+    SetBounds(StdLeft, StdTop, StdWidth, StdHeight);
+
+    //AutoSize := true;
+
+    Block.Picture.Bitmap.Height := StdHeight;
+    Block.Picture.Bitmap.Width := StdWidth;
 
     Tag := Diagrams.data.ID;
     OnDblClick := frmMain.BlockDblClick;
     OnClick := frmMain.BlockClick;
-    // OnPaint := frmMain.BlockPaint;
 
     Visible := True;
     Show;
@@ -205,6 +210,18 @@ procedure ChangeBlockInArray(ID: Integer; Info: TDataString);
 // i: Integer;
 begin
 
+end;
+
+procedure MakeWhite();
+var
+  i: Integer;
+begin
+  with frmMain do
+    for i := Low(Diagram) to High(Diagram) do
+    begin
+      Diagram[i].Canvas.Brush.Color := clWhite;
+      PaintBlock[GetNodeType(Diagram[i].Tag)](Diagram[i]);
+    end;
 end;
 
 { TfrmMain }
@@ -273,18 +290,6 @@ begin
   PaintDiagram();
 end;
 
-procedure MakeWhite();
-var
-  i: Integer;
-begin
-  with frmMain do
-    for i := Low(Diagram) to High(Diagram) do
-    begin
-      Diagram[i].Canvas.Brush.Color := clWhite;
-      PaintBlock[GetNodeType(Diagram[i].Tag)](Diagram[i]);
-    end;
-end;
-
 procedure TfrmMain.BlockClick(Sender: TObject);
 begin
   MakeWhite();
@@ -294,7 +299,6 @@ begin
     Canvas.Brush.Color := clYellow;
     PaintBlock[GetNodeType(TImage(Sender).Tag)](TImage(Sender));
     Canvas.Brush.Color := clWhite;
-    // PaintBlock[GetNodeType(TImage(Sender).Tag)](TImage(Sender));
   end;
 
 end;
