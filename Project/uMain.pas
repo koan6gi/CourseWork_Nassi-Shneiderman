@@ -161,6 +161,7 @@ end;
 
 procedure CreateBlock(var Block: TImage; const NT: TNodeType;
   Owner: TWinControl);
+  var CountOfBranch: Integer;
 begin
   Block := TImage.Create(Owner);
   Block.Parent := Owner;
@@ -174,13 +175,22 @@ begin
     Block.Picture.Bitmap.Height := StdHeight;
     Block.Picture.Bitmap.Width := StdWidth;
 
-    Tag := GetNodeMaxID;
+    case NT of
+      ntIF: CountOfBranch := 2;
+      ntWhile: CountOfBranch := 1;
+      ntRepeat: CountOfBranch := 1;
+      else
+        CountOfBranch := 0;
+    end;
+
+
+    Tag := GetNodeMaxID - CountOfBranch;
     OnDblClick := frmMain.BlockDblClick;
     OnClick := frmMain.BlockClick;
 
     Visible := True;
     Show;
-    PaintBlock[GetNodeType(Tag)](Block);
+    PaintBlock[NT](Block);
   end;
 
 end;
@@ -241,7 +251,7 @@ begin
   InsertBlockInArray(CurrBlockID, NT,
     TDataString(frmEditInfo.LabeledEditMain.Text));
 
-  frmMain.BlockClick(GetBlock(GetNodeMaxID));
+  frmMain.BlockClick(GetBlock(CurrBlockID));
 end;
 
 { TfrmMain }
@@ -293,8 +303,8 @@ end;
 procedure TfrmMain.ActionListMainUpdate(Action: TBasicAction;
   var Handled: Boolean);
 begin
-  actDiagramDeleteBlock.Enabled := (length(Diagram) <> 1);
-  actDiagramEditBlockCaption.Enabled := (length(Diagram) <> 1);
+  actDiagramDeleteBlock.Enabled := (GetNodeType(CurrBlockID) <> ntHead);
+  actDiagramEditBlockCaption.Enabled := actDiagramDeleteBlock.Enabled;
 end;
 
 procedure TfrmMain.BlockClick(Sender: TObject);
