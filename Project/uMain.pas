@@ -41,7 +41,7 @@ type
     menuEditCopy: TMenuItem;
     menuEditPaste: TMenuItem;
     menuDiagram: TMenuItem;
-    menuAdd: TMenuItem;
+    menuDiagramAdd: TMenuItem;
     menuDiagramAddProcess: TMenuItem;
     menuDiagramAddIF: TMenuItem;
     menuDiagramAddWhile: TMenuItem;
@@ -54,6 +54,8 @@ type
     tbAddWhile: TToolButton;
     tbDiagramAddRepeat: TToolButton;
     ScrollBoxMain: TScrollBox;
+    actDiagramEditBlockCaption: TAction;
+    menuDiagramEditBlockCaption: TMenuItem;
     procedure BlockDblClick(Sender: TObject);
     procedure BlockClick(Sender: TObject);
     procedure actDiagramAddProcessExecute(Sender: TObject);
@@ -61,6 +63,8 @@ type
     procedure actDiagramAddWhileExecute(Sender: TObject);
     procedure actDiagramAddRepeatExecute(Sender: TObject);
     procedure frmMainCreate(Sender: TObject);
+    procedure actDiagramEditBlockCaptionExecute(Sender: TObject);
+    procedure ActionListMainUpdate(Action: TBasicAction; var Handled: Boolean);
   private
 
   public
@@ -145,6 +149,16 @@ const
   PaintBlock: array [TNodeType] of TPaintBlock = (PaintHead, PaintProcessBlock,
     PaintIFBlock, PaintWhileBlock, PaintRepeatBlock);
 
+function GetBlock(const ID: Integer): TImage;
+var
+  I: Integer;
+begin
+  result := nil;
+  for I := Low(frmMain.Diagram) to High(frmMain.Diagram) do
+    if frmMain.Diagram[i].Tag = ID then
+      result := frmMain.Diagram[i];
+end;
+
 procedure CreateBlock(var Block: TImage; const NT: TNodeType;
   Owner: TWinControl);
 begin
@@ -174,7 +188,7 @@ end;
 procedure InsertBlockInArray(ID: Integer; NT: TNodeType; Info: TDataString);
 var
   i, k: Integer;
-  temp: TImage;
+  temp, Block: TImage;
   IHeight: Integer;
 begin
   IHeight := 0;
@@ -192,11 +206,11 @@ begin
     end;
   PaintBlock[GetNodeType(frmMain.Diagram[k - 1].Tag)](frmMain.Diagram[k - 1]);
 
-  for i := k to High(frmMain.Diagram) do
-    frmMain.Diagram[i].Top := frmMain.Diagram[i].Top + IHeight;
 
-  with frmMain.Diagram[High(frmMain.Diagram)] do
-    StdTop := Top + Picture.Bitmap.Height;
+
+  for i := k to High(frmMain.Diagram) do
+  if frmMain.Diagram[k - 1].Parent = frmMain.Diagram[i].Parent then
+    frmMain.Diagram[i].Top := frmMain.Diagram[i].Top + IHeight;
 
 end;
 
@@ -226,16 +240,19 @@ begin
 
   InsertBlockInArray(CurrBlockID, NT,
     TDataString(frmEditInfo.LabeledEditMain.Text));
+
+  frmMain.BlockClick(GetBlock(GetNodeMaxID));
 end;
 
 { TfrmMain }
 
 procedure TfrmMain.BlockDblClick(Sender: TObject);
+var
+  Block: TImage;
 begin
-  frmEditInfo.LabeledEditMain.Text := '';
-  if frmEditInfo.ShowModal <> mrOK then
-    Exit;
-
+  Block := GetBlock(CurrBlockID);
+  if Block <> nil then
+    frmMain.actDiagramEditBlockCaptionExecute(Block);
 end;
 
 procedure TfrmMain.frmMainCreate(Sender: TObject);
@@ -264,6 +281,20 @@ end;
 procedure TfrmMain.actDiagramAddWhileExecute(Sender: TObject);
 begin
   InsertBlockInDiagram(ntWhile);
+end;
+
+procedure TfrmMain.actDiagramEditBlockCaptionExecute(Sender: TObject);
+begin
+  frmEditInfo.LabeledEditMain.Text := '';
+  if frmEditInfo.ShowModal <> mrOK then
+    Exit;
+end;
+
+procedure TfrmMain.ActionListMainUpdate(Action: TBasicAction;
+  var Handled: Boolean);
+begin
+  actDiagramDeleteBlock.Enabled := (length(Diagram) <> 1);
+  actDiagramEditBlockCaption.Enabled := (length(Diagram) <> 1);
 end;
 
 procedure TfrmMain.BlockClick(Sender: TObject);

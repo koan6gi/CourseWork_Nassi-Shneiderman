@@ -63,6 +63,7 @@ object frmMain: TfrmMain
   end
   object ActionListMain: TActionList
     Images = ImageListMain
+    OnUpdate = ActionListMainUpdate
     Left = 788
     Top = 36
     object actFileNew: TAction
@@ -148,6 +149,12 @@ object frmMain: TfrmMain
       Caption = #1059#1076#1072#1083#1080#1090#1100' '#1073#1083#1086#1082
       ImageIndex = 9
     end
+    object actDiagramEditBlockCaption: TAction
+      Category = 'Diagram'
+      Caption = #1056#1077#1076#1072#1082#1090#1080#1088#1086#1074#1072#1090#1100' '#1085#1072#1076#1087#1080#1089#1100
+      ImageIndex = 9
+      OnExecute = actDiagramEditBlockCaptionExecute
+    end
   end
   object MainMenu: TMainMenu
     Images = ImageListMain
@@ -191,7 +198,7 @@ object frmMain: TfrmMain
     end
     object menuDiagram: TMenuItem
       Caption = #1057#1093#1077#1084#1072
-      object menuAdd: TMenuItem
+      object menuDiagramAdd: TMenuItem
         Caption = #1044#1086#1073#1072#1074#1080#1090#1100
         object menuDiagramAddProcess: TMenuItem
           Action = actDiagramAddProcess
@@ -205,6 +212,9 @@ object frmMain: TfrmMain
         object menuDiagramAddRepeat: TMenuItem
           Action = actDiagramAddRepeat
         end
+      end
+      object menuDiagramEditBlockCaption: TMenuItem
+        Action = actDiagramEditBlockCaption
       end
       object menuSeparator2: TMenuItem
         Caption = '-'
