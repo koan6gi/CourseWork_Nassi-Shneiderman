@@ -1,4 +1,4 @@
-unit uMain;
+п»їunit uMain;
 
 interface
 
@@ -54,7 +54,6 @@ type
     tbAddWhile: TToolButton;
     tbDiagramAddRepeat: TToolButton;
     ScrollBoxMain: TScrollBox;
-    Image1: TImage;
     procedure BlockDblClick(Sender: TObject);
     procedure BlockClick(Sender: TObject);
     procedure actDiagramAddProcessExecute(Sender: TObject);
@@ -77,9 +76,9 @@ implementation
 {$R *.dfm}
 
 const
-  EditInfoMessages: array [TNodeType] of String = ('', 'Введите текст',
-    'Введите условие', 'Введите условие входа в цикл',
-    'Введите условие выхода из цикла');
+  EditInfoMessages: array [TNodeType] of String = ('', 'Р’РІРµРґРёС‚Рµ С‚РµРєСЃС‚',
+    'Р’РІРµРґРёС‚Рµ СѓСЃР»РѕРІРёРµ', 'Р’РІРµРґРёС‚Рµ СѓСЃР»РѕРІРёРµ РІС…РѕРґР° РІ С†РёРєР»',
+    'Р’РІРµРґРёС‚Рµ СѓСЃР»РѕРІРёРµ РІС‹С…РѕРґР° РёР· С†РёРєР»Р°');
 
 var
   StdLeft: Integer = 150;
