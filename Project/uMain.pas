@@ -1,4 +1,4 @@
-п»їunit uMain;
+unit uMain;
 
 interface
 
@@ -61,7 +61,6 @@ type
     procedure actDiagramAddWhileExecute(Sender: TObject);
     procedure actDiagramAddRepeatExecute(Sender: TObject);
     procedure frmMainCreate(Sender: TObject);
-    procedure ActionListMainChange(Sender: TObject);
   private
 
   public
@@ -76,9 +75,9 @@ implementation
 {$R *.dfm}
 
 const
-  EditInfoMessages: array [TNodeType] of String = ('', 'Р’РІРµРґРёС‚Рµ С‚РµРєСЃС‚',
-    'Р’РІРµРґРёС‚Рµ СѓСЃР»РѕРІРёРµ', 'Р’РІРµРґРёС‚Рµ СѓСЃР»РѕРІРёРµ РІС…РѕРґР° РІ С†РёРєР»',
-    'Р’РІРµРґРёС‚Рµ СѓСЃР»РѕРІРёРµ РІС‹С…РѕРґР° РёР· С†РёРєР»Р°');
+  EditInfoMessages: array [TNodeType] of String = ('', 'Введите текст',
+    'Введите условие', 'Введите условие входа в цикл',
+    'Введите условие выхода из цикла');
 
 var
   StdLeft: Integer = 150;
@@ -86,14 +85,13 @@ var
   StdHeight: Integer = 100;
   StdTop: Integer = 10;
   CurrBlockID: Integer = 0;
-  // CurrClick: TPoint;
 
 Type
   TPaintBlock = procedure(var Block: TImage);
 
 procedure PaintProcessBlock(var Block: TImage);
 begin
-  with Block do
+  with Block, Picture.Bitmap do
   begin
     Canvas.Pen.Color := clBlack;
     Block.Canvas.Rectangle(0, 0, Width, Height);
@@ -105,7 +103,7 @@ var
   y: Integer;
   Tr: Array [1 .. 3] of TPoint;
 begin
-  with Block do
+  with Block, Picture.Bitmap do
   begin
     Block.Canvas.Rectangle(0, 0, Width, Height);
     y := Height div 2;
@@ -122,7 +120,7 @@ end;
 
 procedure PaintWhileBlock(var Block: TImage);
 begin
-  with Block do
+  with Block, Picture.Bitmap do
   begin
     Block.Canvas.Rectangle(0, 0, Block.Width, Height);
     Block.Canvas.Rectangle(Width div 5, Height div 3, Width, Height);
@@ -131,7 +129,7 @@ end;
 
 procedure PaintRepeatBlock(var Block: TImage);
 begin
-  with Block do
+  with Block, Picture.Bitmap do
   begin
     Block.Canvas.Rectangle(0, 0, Width, Height);
     Block.Canvas.Rectangle(Width div 5, 2 * Height div 3, Width, 0);
@@ -147,29 +145,28 @@ const
   PaintBlock: array [TNodeType] of TPaintBlock = (PaintHead, PaintProcessBlock,
     PaintIFBlock, PaintWhileBlock, PaintRepeatBlock);
 
-procedure CreateBlock(var Block: TImage; NT: TNodeType);
+procedure CreateBlock(var Block: TImage; const NT: TNodeType;
+  Owner: TWinControl);
 begin
-  Block := TImage.Create(frmMain.ScrollBoxMain);
+  Block := TImage.Create(Owner);
+  Block.Parent := Owner;
   with Block do
   begin
-    Parent := frmMain.ScrollBoxMain;
-
     Canvas.Pen.Color := clBlack;
     Canvas.Brush.Color := clWhite;
 
     SetBounds(StdLeft, StdTop, StdWidth, StdHeight);
 
-    //AutoSize := true;
-
     Block.Picture.Bitmap.Height := StdHeight;
     Block.Picture.Bitmap.Width := StdWidth;
 
-    Tag := Diagrams.data.ID;
+    Tag := GetNodeMaxID;
     OnDblClick := frmMain.BlockDblClick;
     OnClick := frmMain.BlockClick;
 
     Visible := True;
     Show;
+    PaintBlock[GetNodeType(Tag)](Block);
   end;
 
 end;
@@ -185,22 +182,21 @@ begin
   for i := Low(frmMain.Diagram) to High(frmMain.Diagram) do
     if ID = frmMain.Diagram[i].Tag then
     begin
-      StdTop := frmMain.Diagram[i].Top + frmMain.Diagram[i].Height;
-      CreateBlock(temp, NT);
+      StdTop := frmMain.Diagram[i].Top + frmMain.Diagram[i]
+        .Picture.Bitmap.Height;
+      CreateBlock(temp, NT, frmMain.ScrollBoxMain);
       Insert(temp, frmMain.Diagram, i + 1);
-      IHeight := temp.Height;
+      IHeight := temp.Picture.Bitmap.Height;
       k := i + 2;
       Break;
     end;
-  PaintBlock[GetNodeType(frmMain.Diagram[k - 1].Tag)](frmMain.Diagram[k - 2]);
-  frmMain.BlockClick(temp);
+  PaintBlock[GetNodeType(frmMain.Diagram[k - 1].Tag)](frmMain.Diagram[k - 1]);
 
   for i := k to High(frmMain.Diagram) do
     frmMain.Diagram[i].Top := frmMain.Diagram[i].Top + IHeight;
-  // PaintBlock[NT](temp);
 
   with frmMain.Diagram[High(frmMain.Diagram)] do
-    StdTop := Top + Height;
+    StdTop := Top + Picture.Bitmap.Height;
 
 end;
 
@@ -223,15 +219,16 @@ begin
     end;
 end;
 
-{ TfrmMain }
-
-procedure PaintDiagram();
-var
-  i: Integer;
+procedure InsertBlockInDiagram(const NT: TNodeType);
 begin
-  for i := Low(frmMain.Diagram) to High(frmMain.Diagram) do
-    PaintBlock[GetNodeType(frmMain.Diagram[i].Tag)](frmMain.Diagram[i]);
+  InsertBlockInTree(CurrBlockID, NT,
+    TDataString(frmEditInfo.LabeledEditMain.Text));
+
+  InsertBlockInArray(CurrBlockID, NT,
+    TDataString(frmEditInfo.LabeledEditMain.Text));
 end;
+
+{ TfrmMain }
 
 procedure TfrmMain.BlockDblClick(Sender: TObject);
 begin
@@ -244,49 +241,29 @@ end;
 procedure TfrmMain.frmMainCreate(Sender: TObject);
 begin
   SetLength(frmMain.Diagram, 1);
-  CreateBlock(frmMain.Diagram[0], ntHead);
-  frmMain.Diagram[0].Height := 0;
+  StdHeight := 0;
+  CreateBlock(frmMain.Diagram[0], ntHead, frmMain.ScrollBoxMain);
+  StdHeight := 100;
 end;
 
 procedure TfrmMain.actDiagramAddIFExecute(Sender: TObject);
 begin
-  InsertBlockInTree(CurrBlockID, ntIF,
-    TDataString(frmEditInfo.LabeledEditMain.Text));
-
-  InsertBlockInArray(CurrBlockID, ntIF,
-    TDataString(frmEditInfo.LabeledEditMain.Text));
+  InsertBlockInDiagram(ntIf);
 end;
 
 procedure TfrmMain.actDiagramAddProcessExecute(Sender: TObject);
 begin
-  InsertBlockInTree(CurrBlockID, ntProcess,
-    TDataString(frmEditInfo.LabeledEditMain.Text));
-
-  InsertBlockInArray(CurrBlockID, ntProcess,
-    TDataString(frmEditInfo.LabeledEditMain.Text));
+  InsertBlockInDiagram(ntProcess);
 end;
 
 procedure TfrmMain.actDiagramAddRepeatExecute(Sender: TObject);
 begin
-  InsertBlockInTree(CurrBlockID, ntRepeat,
-    TDataString(frmEditInfo.LabeledEditMain.Text));
-
-  InsertBlockInArray(CurrBlockID, ntRepeat,
-    TDataString(frmEditInfo.LabeledEditMain.Text));
+  InsertBlockInDiagram(ntRepeat);
 end;
 
 procedure TfrmMain.actDiagramAddWhileExecute(Sender: TObject);
 begin
-  InsertBlockInTree(CurrBlockID, ntWhile,
-    TDataString(frmEditInfo.LabeledEditMain.Text));
-
-  InsertBlockInArray(CurrBlockID, ntWhile,
-    TDataString(frmEditInfo.LabeledEditMain.Text));
-end;
-
-procedure TfrmMain.ActionListMainChange(Sender: TObject);
-begin
-  PaintDiagram();
+  InsertBlockInDiagram(ntWhile);
 end;
 
 procedure TfrmMain.BlockClick(Sender: TObject);
