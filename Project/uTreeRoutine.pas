@@ -41,8 +41,10 @@ Type
     subNode: TSubNode;
   end;
 
+  TArrOfInd = array of Integer;
+
 var
-  Diagram: PAdrOfNode;
+  TreeDiagram: PAdrOfNode;
 
 procedure InsertBlockInTree(ID: Integer; NT: TNodeType; Info: TDataString);
 
@@ -54,6 +56,8 @@ function GetNodeMaxID(): Integer;
 
 procedure IncNodeMaxID();
 
+function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
+
 implementation
 
 function GetNode(const ID: Integer): PAdrOfNode;
@@ -61,45 +65,136 @@ function GetNode(const ID: Integer): PAdrOfNode;
   begin
     result := nil;
 
-    with Tree^ do
-      while (Tree <> nil) do
+    while (Tree <> nil) do
+    begin
+      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
+      then
       begin
-        if (data.nodeType = ntWhile) or (data.nodeType = ntRepeat) then
-        begin
-          result := gn(subNode.cycleBlock.cycleBranch, ID);
-        end
-        else if (data.nodeType = ntIF) then
-        begin
-          result := gn(subNode.ifBlock.trueBranch, ID);
-          if result = nil then
-            result := gn(subNode.ifBlock.falseBranch, ID);
-        end;
-
-        if (Tree^.data.ID = ID) then
-          result := Tree;
-
-        if result <> nil then
-          Exit;
-
-        Tree := Tree^.next;
+        result := gn(Tree^.subNode.cycleBlock.cycleBranch, ID);
+      end
+      else if (Tree^.data.nodeType = ntIF) then
+      begin
+        result := gn(Tree^.subNode.ifBlock.trueBranch, ID);
+        if result = nil then
+          result := gn(Tree^.subNode.ifBlock.falseBranch, ID);
       end;
+
+      if (Tree^.data.ID = ID) then
+        result := Tree;
+
+      if result <> nil then
+        Exit;
+
+      Tree := Tree^.next;
+    end;
   end;
 
 begin
   if ID = 0 then
-    result := Diagram
+    result := TreeDiagram
   else
-    result := gn(Diagram^.next, ID);
+    result := gn(TreeDiagram, ID);
+end;
+
+function GetNodeHead(const ID: Integer): PAdrOfNode;
+  function gnh(Tree: PAdrOfNode; ID: Integer): PAdrOfNode;
+  var
+    Parent: PAdrOfNode;
+  begin
+    result := nil;
+    Parent := Tree;
+
+    while (Tree <> nil) do
+    begin
+      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
+      then
+      begin
+        result := gnh(Tree^.subNode.cycleBlock.cycleBranch, ID);
+      end
+      else if (Tree^.data.nodeType = ntIF) then
+      begin
+        result := gnh(Tree^.subNode.ifBlock.trueBranch, ID);
+        if result = nil then
+          result := gnh(Tree^.subNode.ifBlock.falseBranch, ID);
+      end;
+
+      if (Tree^.data.ID = ID) then
+        result := Parent;
+
+      if result <> nil then
+        Exit;
+
+      Tree := Tree^.next;
+    end;
+  end;
+
+begin
+  if ID = 0 then
+    result := TreeDiagram
+  else
+    result := gnh(TreeDiagram, ID);
+end;
+
+function GetNodeParent(const ID: Integer): PAdrOfNode;
+var
+  IsAlreadySearched: Boolean;
+  function gnp(Tree: PAdrOfNode; ID: Integer): PAdrOfNode;
+  var
+    Parent: PAdrOfNode;
+  begin
+    result := nil;
+    Parent := Tree;
+
+    while (Tree <> nil) do
+    begin
+      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
+      then
+      begin
+        result := gnp(Tree^.subNode.cycleBlock.cycleBranch, ID);
+      end
+      else if (Tree^.data.nodeType = ntIF) then
+      begin
+        result := gnp(Tree^.subNode.ifBlock.trueBranch, ID);
+        if result = nil then
+        begin
+          result := gnp(Tree^.subNode.ifBlock.falseBranch, ID);
+        end;
+      end;
+      if (result <> nil) and not(IsAlreadySearched) then
+      begin
+        result := Tree;
+        IsAlreadySearched := True;
+        Exit;
+      end;
+
+      if (Tree^.data.ID = ID) then
+        result := Parent;
+
+      if result <> nil then
+      begin
+        Exit;
+      end;
+
+      Tree := Tree^.next;
+    end;
+  end;
+
+begin
+  IsAlreadySearched := False;
+  if ID = 0 then
+    result := TreeDiagram
+  else
+    result := gnp(TreeDiagram, ID);
 end;
 
 function GetNodeMaxID(): Integer;
 begin
-  result := Diagram^.data.maxID;
+  result := TreeDiagram^.data.maxID;
 end;
 
 procedure IncNodeMaxID();
 begin
-  Inc(Diagram^.data.maxID);
+  Inc(TreeDiagram^.data.maxID);
 end;
 
 function GetNodeInfo(const ID: Integer): TData;
@@ -124,7 +219,7 @@ end;
 
 procedure CreateHead(var Tree: PAdrOfNode); forward;
 
-procedure InsertIfBlockHeads(Branch: PAdrOfNode);
+procedure InsertIfBlockHeadsInTree(var Branch: PAdrOfNode);
 begin
   CreateHead(Branch^.subNode.ifBlock.trueBranch);
   IncNodeMaxID();
@@ -134,19 +229,128 @@ begin
   Branch^.subNode.ifBlock.falseBranch.data.ID := GetNodeMaxID();
 end;
 
-procedure InsertCycleBlockHead(Branch: PAdrOfNode);
+procedure InsertCycleBlockHeadInTree(var Branch: PAdrOfNode);
 begin
   CreateHead(Branch^.subNode.cycleBlock.cycleBranch);
   IncNodeMaxID();
   Branch^.subNode.cycleBlock.cycleBranch.data.ID := GetNodeMaxID();
 end;
 
+procedure Add10El(var Arr: TArrOfInd);
+var
+  I: Integer;
+
+begin
+  SetLength(Arr, Length(Arr) + 10);
+  for I := High(Arr) - 9 to High(Arr) do
+    Arr[I] := 0;
+end;
+
+function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
+var
+  Arr: TArrOfInd;
+  I: Integer;
+  Node, NodeParent: PAdrOfNode;
+  procedure MakeArr(Tree: PAdrOfNode);
+  begin
+    while Tree <> nil do
+    begin
+      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
+      then
+      begin
+        MakeArr(Tree^.subNode.cycleBlock.cycleBranch);
+      end
+      else if (Tree^.data.nodeType = ntIF) then
+      begin
+        MakeArr(Tree^.subNode.ifBlock.trueBranch);
+        MakeArr(Tree^.subNode.ifBlock.falseBranch);
+      end;
+
+      if I > High(Arr) then
+        Add10El(Arr);
+      Arr[I] := Tree^.data.ID;
+      Inc(I);
+
+      Tree := Tree^.next;
+    end;
+  end;
+
+begin
+  I := 0;
+  SetLength(Arr, 0);
+  Node := GetNodeParent(ID);
+  Node := GetNode(ID);
+  if Node <> nil then
+    MakeArr(Node^.next);
+
+  NodeParent := GetNodeParent(ID);
+  if (NodeParent <> nil) and (NodeParent.data.ID <> 0) then
+    MakeArr(NodeParent^.next);
+
+    result := Copy(Arr, 0, Length(Arr));
+
+  for I := Low(result) + 1 to High(result) do
+    if result[I] = 0 then
+    begin
+      SetLength(result, I + 1);
+      break;
+    end;
+end;
+
+function GetArrOfBranchElementsID(const ID: Integer): TArrOfInd;
+var
+  Arr: TArrOfInd;
+  I: Integer;
+  Node: PAdrOfNode;
+  procedure MakeArr(Tree: PAdrOfNode);
+  begin
+    while Tree <> nil do
+    begin
+      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
+      then
+      begin
+        MakeArr(Tree^.subNode.cycleBlock.cycleBranch);
+      end
+      else if (Tree^.data.nodeType = ntIF) then
+      begin
+        MakeArr(Tree^.subNode.ifBlock.trueBranch);
+        MakeArr(Tree^.subNode.ifBlock.falseBranch);
+      end;
+
+      if I > High(Arr) then
+        Add10El(Arr);
+      Arr[I] := Tree^.data.ID;
+      Inc(I);
+
+      Tree := Tree^.next;
+    end;
+  end;
+
+begin
+  I := 0;
+  SetLength(Arr, 0);
+  Node := GetNodeParent(ID);
+  Node := GetNode(ID);
+  if Node <> nil then
+    MakeArr(Node^.next);
+
+  result := Copy(Arr, 0, Length(Arr));
+
+  for I := Low(result) + 1 to High(result) do
+    if result[I] = 0 then
+    begin
+      SetLength(result, I + 1);
+      break;
+    end;
+end;
+
 type
-  TCreateBlockHead = procedure(Branch: PAdrOfNode);
+  TInsertBlockHeadInTree = procedure(var Branch: PAdrOfNode);
 
 const
-  CreateBlockHead: array [TNodeType] of TCreateBlockHead = (nil, nil,
-    InsertIfBlockHeads, InsertCycleBlockHead, InsertCycleBlockHead);
+  InsertBlockHeadInTree: array [TNodeType] of TInsertBlockHeadInTree = (nil,
+    nil, InsertIfBlockHeadsInTree, InsertCycleBlockHeadInTree,
+    InsertCycleBlockHeadInTree);
 
 procedure InsertBlockInTree(ID: Integer; NT: TNodeType; Info: TDataString);
 var
@@ -163,8 +367,8 @@ begin
     data.ID := GetNodeMaxID();
     nodeType := NT;
 
-    if Assigned(CreateBlockHead[NT]) then
-      CreateBlockHead[NT](tempNode);
+    if Assigned(InsertBlockHeadInTree[NT]) then
+      InsertBlockHeadInTree[NT](tempNode);
 
     next := temp;
   end;
@@ -211,10 +415,10 @@ end;
 
 initialization
 
-CreateHead(Diagram);
+CreateHead(TreeDiagram);
 
 finalization
 
-FreeDiagram(Diagram);
+FreeDiagram(TreeDiagram);
 
 end.

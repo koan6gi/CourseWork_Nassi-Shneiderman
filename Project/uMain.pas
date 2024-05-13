@@ -86,7 +86,7 @@ const
 var
   StdLeft: Integer = 150;
   StdWidth: Integer = 150;
-  StdHeight: Integer = 100;
+  StdHeight: Integer = 50;
   StdTop: Integer = 10;
   CurrBlockID: Integer = 0;
 
@@ -104,21 +104,15 @@ end;
 
 procedure PaintIFBlock(var Block: TImage);
 var
-  y: Integer;
   Tr: Array [1 .. 3] of TPoint;
 begin
   with Block, Picture.Bitmap do
   begin
     Block.Canvas.Rectangle(0, 0, Width, Height);
-    y := Height div 2;
-    Canvas.MoveTo(0, y);
-    Canvas.LineTo(Width, y);
     Tr[1].Create(0, 0);
     Tr[2].Create(Width, 0);
-    Tr[3].Create(Width div 2, Height div 2);
+    Tr[3].Create(Width div 2, Height);
     Canvas.Polygon(Tr);
-    Canvas.MoveTo(Width div 2, Height div 2);
-    Canvas.LineTo(Width div 2, Height);
   end;
 end;
 
@@ -142,7 +136,11 @@ end;
 
 Procedure PaintHead(Var Block: TImage);
 begin
-  Block.Height := 0;
+  with Block, Picture.Bitmap do
+  begin
+    Canvas.Pen.Color := clBlack;
+    Block.Canvas.Rectangle(0, 0, Width, Height);
+  end;
 end;
 
 const
@@ -155,13 +153,30 @@ var
 begin
   result := nil;
   for I := Low(frmMain.Diagram) to High(frmMain.Diagram) do
-    if frmMain.Diagram[i].Tag = ID then
-      result := frmMain.Diagram[i];
+    if frmMain.Diagram[I].Tag = ID then
+    begin
+      result := frmMain.Diagram[I];
+      break;
+    end;
+end;
+
+function GetBlockInd(const ID: Integer): Integer;
+var
+  I: Integer;
+begin
+  result := 0;
+  for I := Low(frmMain.Diagram) to High(frmMain.Diagram) do
+    if frmMain.Diagram[I].Tag = ID then
+    begin
+      result := I;
+      break;
+    end;
 end;
 
 procedure CreateBlock(var Block: TImage; const NT: TNodeType;
   Owner: TWinControl);
-  var CountOfBranch: Integer;
+var
+  CountOfBranch: Integer;
 begin
   Block := TImage.Create(Owner);
   Block.Parent := Owner;
@@ -176,13 +191,15 @@ begin
     Block.Picture.Bitmap.Width := StdWidth;
 
     case NT of
-      ntIF: CountOfBranch := 2;
-      ntWhile: CountOfBranch := 1;
-      ntRepeat: CountOfBranch := 1;
-      else
-        CountOfBranch := 0;
+      ntIF:
+        CountOfBranch := 2;
+      ntWhile:
+        CountOfBranch := 1;
+      ntRepeat:
+        CountOfBranch := 1;
+    else
+      CountOfBranch := 0;
     end;
-
 
     Tag := GetNodeMaxID - CountOfBranch;
     OnDblClick := frmMain.BlockDblClick;
@@ -195,32 +212,84 @@ begin
 
 end;
 
+function GetArrOfNextElementsInd(const ID: Integer): TArrOfInd;
+var
+  Arr: TArrOfInd;
+  I: Integer;
+begin
+  Arr := GetArrOfNextElementsID(ID);
+  for I := Low(Arr) to High(Arr) do
+    Arr[I] := GetBlockInd(Arr[I]);
+  result := Copy(Arr, 0, Length(Arr));
+end;
+
 procedure InsertBlockInArray(ID: Integer; NT: TNodeType; Info: TDataString);
 var
-  i, k: Integer;
+  I, k: Integer;
   temp, Block: TImage;
-  IHeight: Integer;
+  IHeight, IWidth, IDOfNewBlock: Integer;
+  CurrNodeType: TNodeType;
+  Arr: TArrOfInd;
 begin
   IHeight := 0;
   k := 0;
-  for i := Low(frmMain.Diagram) to High(frmMain.Diagram) do
-    if ID = frmMain.Diagram[i].Tag then
+  IDOfNewBlock := 0;
+  CurrNodeType := GetNodeType(CurrBlockID);
+  for I := Low(frmMain.Diagram) to High(frmMain.Diagram) do
+    if ID = frmMain.Diagram[I].Tag then
     begin
-      StdTop := frmMain.Diagram[i].Top + frmMain.Diagram[i]
-        .Picture.Bitmap.Height;
+      StdTop := frmMain.Diagram[I].Top;
+      if CurrNodeType <> ntHead then
+        StdTop := frmMain.Diagram[I].Top + frmMain.Diagram[I].Height;
       CreateBlock(temp, NT, frmMain.ScrollBoxMain);
-      Insert(temp, frmMain.Diagram, i + 1);
-      IHeight := temp.Picture.Bitmap.Height;
-      k := i + 2;
-      Break;
+      IDOfNewBlock := temp.Tag;
+      temp.Left := frmMain.Diagram[I].Left;
+      Insert(temp, frmMain.Diagram, I + 1);
+
+      IHeight := temp.Height;
+
+      case NT of
+        ntIF:
+          begin
+            Inc(k, 2);
+            CreateBlock(Block, ntHead, frmMain.ScrollBoxMain);
+            Block.Tag := Block.Tag - 1;
+            Block.Top := Block.Top + temp.Height;
+            Block.Left := temp.Left;
+            Insert(Block, frmMain.Diagram, I + 2);
+            IWidth := Block.Width;
+
+            CreateBlock(Block, ntHead, frmMain.ScrollBoxMain);
+            Block.Left := temp.Left + IWidth;
+            Block.Top := Block.Top + temp.Height;
+            Insert(Block, frmMain.Diagram, I + 3);
+
+            temp.Height := temp.Height + IHeight;
+
+            Inc(IHeight, Block.Height);
+          end;
+        ntWhile:
+          begin
+
+          end;
+        ntRepeat:
+          begin
+
+          end;
+      end;
+
+      Inc(k, I + 2);
+      break;
     end;
+
   PaintBlock[GetNodeType(frmMain.Diagram[k - 1].Tag)](frmMain.Diagram[k - 1]);
 
-
-
-  for i := k to High(frmMain.Diagram) do
-  if frmMain.Diagram[k - 1].Parent = frmMain.Diagram[i].Parent then
-    frmMain.Diagram[i].Top := frmMain.Diagram[i].Top + IHeight;
+  if CurrNodeType <> ntHead then
+  begin
+    Arr := GetArrOfNextElementsInd(IDOfNewBlock);
+    for I := Low(Arr) to High(Arr) do
+      frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
+  end;
 
 end;
 
@@ -233,13 +302,13 @@ end;
 
 procedure MakeWhite();
 var
-  i: Integer;
+  I: Integer;
 begin
   with frmMain do
-    for i := Low(Diagram) to High(Diagram) do
+    for I := Low(Diagram) to High(Diagram) do
     begin
-      Diagram[i].Canvas.Brush.Color := clWhite;
-      PaintBlock[GetNodeType(Diagram[i].Tag)](Diagram[i]);
+      Diagram[I].Canvas.Brush.Color := clWhite;
+      PaintBlock[GetNodeType(Diagram[I].Tag)](Diagram[I]);
     end;
 end;
 
@@ -251,7 +320,8 @@ begin
   InsertBlockInArray(CurrBlockID, NT,
     TDataString(frmEditInfo.LabeledEditMain.Text));
 
-  frmMain.BlockClick(GetBlock(CurrBlockID));
+  // frmMain.BlockClick(GetBlock(CurrBlockID));
+  frmMain.BlockClick(GetBlock(GetNodeMaxID()));
 end;
 
 { TfrmMain }
@@ -270,17 +340,17 @@ begin
   SetLength(frmMain.Diagram, 1);
   StdHeight := 0;
   CreateBlock(frmMain.Diagram[0], ntHead, frmMain.ScrollBoxMain);
-  StdHeight := 100;
-end;
-
-procedure TfrmMain.actDiagramAddIFExecute(Sender: TObject);
-begin
-  InsertBlockInDiagram(ntIf);
+  StdHeight := 50;
 end;
 
 procedure TfrmMain.actDiagramAddProcessExecute(Sender: TObject);
 begin
   InsertBlockInDiagram(ntProcess);
+end;
+
+procedure TfrmMain.actDiagramAddIFExecute(Sender: TObject);
+begin
+  InsertBlockInDiagram(ntIF);
 end;
 
 procedure TfrmMain.actDiagramAddRepeatExecute(Sender: TObject);
@@ -305,6 +375,13 @@ procedure TfrmMain.ActionListMainUpdate(Action: TBasicAction;
 begin
   actDiagramDeleteBlock.Enabled := (GetNodeType(CurrBlockID) <> ntHead);
   actDiagramEditBlockCaption.Enabled := actDiagramDeleteBlock.Enabled;
+
+  actDiagramAddProcess.Enabled :=
+    not((Length(Diagram) = 2) and (GetNodeType(CurrBlockID) = ntHead));
+  actDiagramAddIF.Enabled := actDiagramAddProcess.Enabled;
+  actDiagramAddWhile.Enabled := actDiagramAddProcess.Enabled;
+  actDiagramAddRepeat.Enabled := actDiagramAddProcess.Enabled;
+
 end;
 
 procedure TfrmMain.BlockClick(Sender: TObject);
