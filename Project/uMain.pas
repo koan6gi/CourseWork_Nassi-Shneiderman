@@ -225,67 +225,58 @@ end;
 
 procedure InsertBlockInArray(ID: Integer; NT: TNodeType; Info: TDataString);
 var
-  I, k: Integer;
-  temp, Block: TImage;
+  I: Integer;
+  temp, Block, DiagramBlock: TImage;
   IHeight, IWidth, IDOfNewBlock: Integer;
   CurrNodeType: TNodeType;
   Arr: TArrOfInd;
 begin
-  IHeight := 0;
-  k := 0;
-  IDOfNewBlock := 0;
   CurrNodeType := GetNodeType(CurrBlockID);
-  for I := Low(frmMain.Diagram) to High(frmMain.Diagram) do
-    if ID = frmMain.Diagram[I].Tag then
-    begin
-      StdTop := frmMain.Diagram[I].Top;
-      if CurrNodeType <> ntHead then
-        StdTop := frmMain.Diagram[I].Top + frmMain.Diagram[I].Height;
-      CreateBlock(temp, NT, frmMain.ScrollBoxMain);
-      IDOfNewBlock := temp.Tag;
-      temp.Left := frmMain.Diagram[I].Left;
-      Insert(temp, frmMain.Diagram, I + 1);
+  DiagramBlock := GetBlock(ID);
 
-      IHeight := temp.Height;
+  StdTop := DiagramBlock.Top;
+  if CurrNodeType <> ntHead then
+    StdTop := DiagramBlock.Top + DiagramBlock.Height;
+  CreateBlock(temp, NT, frmMain.ScrollBoxMain);
+  IDOfNewBlock := temp.Tag;
+  temp.Left := DiagramBlock.Left;
+  Insert(temp, frmMain.Diagram, 0);
 
-      case NT of
-        ntIF:
-          begin
-            Inc(k, 2);
-            CreateBlock(Block, ntHead, frmMain.ScrollBoxMain);
-            Block.Tag := Block.Tag - 1;
-            Block.Top := Block.Top + temp.Height;
-            Block.Left := temp.Left;
-            Insert(Block, frmMain.Diagram, I + 2);
-            IWidth := Block.Width;
+  IHeight := temp.Height;
 
-            CreateBlock(Block, ntHead, frmMain.ScrollBoxMain);
-            Block.Left := temp.Left + IWidth;
-            Block.Top := Block.Top + temp.Height;
-            Insert(Block, frmMain.Diagram, I + 3);
+  case NT of
+    ntIF:
+      begin
+        CreateBlock(Block, ntHead, frmMain.ScrollBoxMain);
+        Block.Tag := Block.Tag - 1;
+        Block.Top := Block.Top + temp.Height;
+        Block.Left := temp.Left;
+        Insert(Block, frmMain.Diagram, 0);
+        IWidth := Block.Width;
 
-            temp.Height := temp.Height + IHeight;
+        CreateBlock(Block, ntHead, frmMain.ScrollBoxMain);
+        Block.Left := temp.Left + IWidth;
+        Block.Top := Block.Top + temp.Height;
+        Insert(Block, frmMain.Diagram, 0);
 
-            Inc(IHeight, Block.Height);
-          end;
-        ntWhile:
-          begin
+        temp.Height := temp.Height + IHeight;
 
-          end;
-        ntRepeat:
-          begin
-
-          end;
+        Inc(IHeight, Block.Height);
       end;
+    ntWhile:
+      begin
 
-      Inc(k, I + 2);
-      break;
-    end;
+      end;
+    ntRepeat:
+      begin
 
-  PaintBlock[GetNodeType(frmMain.Diagram[k - 1].Tag)](frmMain.Diagram[k - 1]);
+      end;
+  end;
 
   if CurrNodeType <> ntHead then
   begin
+    GetBlock(GetNodeParentID(IDOfNewBlock)).Height :=
+      GetBlock(GetNodeParentID(IDOfNewBlock)).Height + IHeight;
     Arr := GetArrOfNextElementsInd(IDOfNewBlock);
     for I := Low(Arr) to High(Arr) do
       frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;

@@ -58,7 +58,13 @@ procedure IncNodeMaxID();
 
 function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
 
+function GetNodeParentID(const ID: Integer): Integer;
+
 implementation
+
+{ **************************************************************************** }
+{ *                    Procedures to get info from modal                     * }
+{ **************************************************************************** }
 
 function GetNode(const ID: Integer): PAdrOfNode;
   function gn(Tree: PAdrOfNode; ID: Integer): PAdrOfNode;
@@ -187,6 +193,11 @@ begin
     result := gnp(TreeDiagram, ID);
 end;
 
+function GetNodeParentID(const ID: Integer): Integer;
+begin
+  result := GetNodeParent(ID).data.ID;
+end;
+
 function GetNodeMaxID(): Integer;
 begin
   result := TreeDiagram^.data.maxID;
@@ -287,7 +298,7 @@ begin
   if (NodeParent <> nil) and (NodeParent.data.ID <> 0) then
     MakeArr(NodeParent^.next);
 
-    result := Copy(Arr, 0, Length(Arr));
+  result := Copy(Arr, 0, Length(Arr));
 
   for I := Low(result) + 1 to High(result) do
     if result[I] = 0 then
