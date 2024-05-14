@@ -227,7 +227,7 @@ procedure InsertBlockInArray(ID: Integer; NT: TNodeType; Info: TDataString);
 var
   I: Integer;
   temp, Block, DiagramBlock: TImage;
-  IHeight, IWidth, IDOfNewBlock: Integer;
+  IHeight, IWidth, IDOfNewBlock, NodeParentID: Integer;
   CurrNodeType: TNodeType;
   Arr: TArrOfInd;
 begin
@@ -275,8 +275,12 @@ begin
 
   if CurrNodeType <> ntHead then
   begin
-    GetBlock(GetNodeParentID(IDOfNewBlock)).Height :=
-      GetBlock(GetNodeParentID(IDOfNewBlock)).Height + IHeight;
+    NodeParentID := IDOfNewBlock;
+    while NodeParentID <> 0 do
+    begin
+      NodeParentID := GetNodeParentID(NodeParentID);
+      GetBlock(NodeParentID).Height := GetBlock(NodeParentID).Height + IHeight;
+    end;
     Arr := GetArrOfNextElementsInd(IDOfNewBlock);
     for I := Low(Arr) to High(Arr) do
       frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;

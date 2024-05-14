@@ -259,11 +259,54 @@ begin
     Arr[I] := 0;
 end;
 
+function GetArrOfBranches(const ID: Integer): TArrOfArrInd;
+var
+  Arr: TArrOfArrInd;
+  procedure gab(Tree: PAdrOfNode);
+  var
+    I: Integer;
+    TempArr, ArrForFalseBranch: TArrOfArrInd;
+  begin
+
+    while (Tree <> nil) do
+    begin
+      for I := Low(Arr) to High(Arr) do
+        Insert(Tree.data.ID, Arr[I], Length(Arr[I]));
+
+      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
+      then
+      begin
+        gab(Tree^.subNode.cycleBlock.cycleBranch);
+      end
+      else if (Tree^.data.nodeType = ntIF) then
+      begin
+        ArrForFalseBranch := Copy(Arr, 0, Length(Arr));
+        gab(Tree^.subNode.ifBlock.trueBranch);
+        TempArr := Arr;
+        Arr := ArrForFalseBranch;
+        gab(Tree^.subNode.ifBlock.falseBranch);
+        Insert(TempArr, Arr, 0);
+        SetLength(ArrForFalseBranch, 0);
+        SetLength(TempArr, 0);
+      end;
+
+      Tree := Tree^.next;
+    end;
+  end;
+
+begin
+  SetLength(Arr, 1);
+  gab(GetNodeParent(ID));
+  result := Copy(Arr, 0, Length(Arr));
+  SetLength(Arr, 0);
+end;
+
 function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
 var
   Arr: TArrOfInd;
   I: Integer;
   Node, NodeParent: PAdrOfNode;
+  ta: TArrOfArrInd;
   procedure MakeArr(Tree: PAdrOfNode);
   begin
     while Tree <> nil do
@@ -291,7 +334,6 @@ var
 begin
   I := 0;
   SetLength(Arr, 0);
-  Node := GetNodeParent(ID);
   Node := GetNode(ID);
   if Node <> nil then
     MakeArr(Node^.next);
@@ -342,7 +384,6 @@ var
 begin
   I := 0;
   SetLength(Arr, 0);
-  Node := GetNodeParent(ID);
   Node := GetNode(ID);
   if Node <> nil then
     MakeArr(Node^.next);
@@ -355,45 +396,6 @@ begin
       SetLength(result, I + 1);
       break;
     end;
-end;
-
-function GetArrOfBranches(const ID: Integer): TArrOfArrInd;
-  var
-    Arr: TArrOfArrInd;
-    i: Integer;
-  procedure gab(Tree: PAdrOfNode);
-  var
-    i: Integer;
-    TempArr, ArrForFalseBranch: TArrOfArrInd;
-  begin
-
-    while (Tree <> nil) do
-    begin
-      for I := Low(Arr) to High(Arr) do
-        Insert(Tree.data.ID, Arr[i], Length(Arr[i]));
-
-      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
-      then
-      begin
-        gab(Tree^.subNode.cycleBlock.cycleBranch);
-      end
-      else if (Tree^.data.nodeType = ntIF) then
-      begin
-        ArrForFalseBranch := Copy(Arr, 0, Length(Arr));
-        gab(Tree^.subNode.ifBlock.trueBranch);
-        tempArr := Arr;
-        Arr := ArrForFalseBranch;
-        gab(Tree^.subNode.ifBlock.falseBranch);
-        Insert(tempArr, Arr, 0);
-      end;
-
-
-      Tree := Tree^.next;
-    end;
-  end;
-
-begin
-  SetLength(Arr, 0);
 end;
 
 type
