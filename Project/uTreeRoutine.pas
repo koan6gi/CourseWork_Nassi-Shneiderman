@@ -43,6 +43,8 @@ Type
 
   TArrOfInd = array of Integer;
 
+  TArrOfArrInd = array of TArrOfInd;
+
 var
   TreeDiagram: PAdrOfNode;
 
@@ -67,7 +69,7 @@ implementation
 { **************************************************************************** }
 
 function GetNode(const ID: Integer): PAdrOfNode;
-  function gn(Tree: PAdrOfNode; ID: Integer): PAdrOfNode;
+  function gn(Tree: PAdrOfNode): PAdrOfNode;
   begin
     result := nil;
 
@@ -76,13 +78,13 @@ function GetNode(const ID: Integer): PAdrOfNode;
       if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
       then
       begin
-        result := gn(Tree^.subNode.cycleBlock.cycleBranch, ID);
+        result := gn(Tree^.subNode.cycleBlock.cycleBranch);
       end
       else if (Tree^.data.nodeType = ntIF) then
       begin
-        result := gn(Tree^.subNode.ifBlock.trueBranch, ID);
+        result := gn(Tree^.subNode.ifBlock.trueBranch);
         if result = nil then
-          result := gn(Tree^.subNode.ifBlock.falseBranch, ID);
+          result := gn(Tree^.subNode.ifBlock.falseBranch);
       end;
 
       if (Tree^.data.ID = ID) then
@@ -99,7 +101,7 @@ begin
   if ID = 0 then
     result := TreeDiagram
   else
-    result := gn(TreeDiagram, ID);
+    result := gn(TreeDiagram);
 end;
 
 function GetNodeHead(const ID: Integer): PAdrOfNode;
@@ -353,6 +355,45 @@ begin
       SetLength(result, I + 1);
       break;
     end;
+end;
+
+function GetArrOfBranches(const ID: Integer): TArrOfArrInd;
+  var
+    Arr: TArrOfArrInd;
+    i: Integer;
+  procedure gab(Tree: PAdrOfNode);
+  var
+    i: Integer;
+    TempArr, ArrForFalseBranch: TArrOfArrInd;
+  begin
+
+    while (Tree <> nil) do
+    begin
+      for I := Low(Arr) to High(Arr) do
+        Insert(Tree.data.ID, Arr[i], Length(Arr[i]));
+
+      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
+      then
+      begin
+        gab(Tree^.subNode.cycleBlock.cycleBranch);
+      end
+      else if (Tree^.data.nodeType = ntIF) then
+      begin
+        ArrForFalseBranch := Copy(Arr, 0, Length(Arr));
+        gab(Tree^.subNode.ifBlock.trueBranch);
+        tempArr := Arr;
+        Arr := ArrForFalseBranch;
+        gab(Tree^.subNode.ifBlock.falseBranch);
+        Insert(tempArr, Arr, 0);
+      end;
+
+
+      Tree := Tree^.next;
+    end;
+  end;
+
+begin
+  SetLength(Arr, 0);
 end;
 
 type

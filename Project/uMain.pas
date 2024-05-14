@@ -317,6 +317,14 @@ end;
 
 { TfrmMain }
 
+procedure TfrmMain.frmMainCreate(Sender: TObject);
+begin
+  SetLength(frmMain.Diagram, 1);
+  StdHeight := 0;
+  CreateBlock(frmMain.Diagram[0], ntHead, frmMain.ScrollBoxMain);
+  StdHeight := 50;
+end;
+
 procedure TfrmMain.BlockDblClick(Sender: TObject);
 var
   Block: TImage;
@@ -324,14 +332,6 @@ begin
   Block := GetBlock(CurrBlockID);
   if Block <> nil then
     frmMain.actDiagramEditBlockCaptionExecute(Block);
-end;
-
-procedure TfrmMain.frmMainCreate(Sender: TObject);
-begin
-  SetLength(frmMain.Diagram, 1);
-  StdHeight := 0;
-  CreateBlock(frmMain.Diagram[0], ntHead, frmMain.ScrollBoxMain);
-  StdHeight := 50;
 end;
 
 procedure TfrmMain.actDiagramAddProcessExecute(Sender: TObject);
