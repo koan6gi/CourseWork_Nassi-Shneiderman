@@ -58,6 +58,8 @@ object frmMain: TfrmMain
     Height = 486
     Align = alClient
     TabOrder = 1
+    OnMouseWheelDown = ScrollBoxMainMouseWheelDown
+    OnMouseWheelUp = ScrollBoxMainMouseWheelUp
     ExplicitWidth = 910
     ExplicitHeight = 477
   end

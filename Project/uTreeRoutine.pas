@@ -62,6 +62,8 @@ function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
 
 function GetNodeParentID(const ID: Integer): Integer;
 
+function GetArrOfBranches(const ID: Integer): TArrOfArrInd;
+
 implementation
 
 { **************************************************************************** }
@@ -304,9 +306,8 @@ end;
 function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
 var
   Arr: TArrOfInd;
-  I: Integer;
+  I, tempID: Integer;
   Node, NodeParent: PAdrOfNode;
-  ta: TArrOfArrInd;
   procedure MakeArr(Tree: PAdrOfNode);
   begin
     while Tree <> nil do
@@ -338,9 +339,15 @@ begin
   if Node <> nil then
     MakeArr(Node^.next);
 
-  NodeParent := GetNodeParent(ID);
-  if (NodeParent <> nil) and (NodeParent.data.ID <> 0) then
-    MakeArr(NodeParent^.next);
+  tempID := ID;
+
+  while tempID <> 0 do
+  begin
+    NodeParent := GetNodeParent(tempID);
+    tempID := NodeParent.data.ID;
+    if (NodeParent <> nil) and (NodeParent.data.ID <> 0) then
+      MakeArr(NodeParent^.next);
+  end;
 
   result := Copy(Arr, 0, Length(Arr));
 

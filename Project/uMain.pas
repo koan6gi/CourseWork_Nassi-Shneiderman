@@ -65,6 +65,10 @@ type
     procedure frmMainCreate(Sender: TObject);
     procedure actDiagramEditBlockCaptionExecute(Sender: TObject);
     procedure ActionListMainUpdate(Action: TBasicAction; var Handled: Boolean);
+    procedure ScrollBoxMainMouseWheelDown(Sender: TObject; Shift: TShiftState;
+      MousePos: TPoint; var Handled: Boolean);
+    procedure ScrollBoxMainMouseWheelUp(Sender: TObject; Shift: TShiftState;
+      MousePos: TPoint; var Handled: Boolean);
   private
 
   public
@@ -84,9 +88,9 @@ const
     '¬ведите условие выхода из цикла');
 
 var
-  StdLeft: Integer = 150;
+  StdLeft: Integer = 100;
   StdWidth: Integer = 150;
-  StdHeight: Integer = 50;
+  StdHeight: Integer = 70;
   StdTop: Integer = 10;
   CurrBlockID: Integer = 0;
 
@@ -140,6 +144,9 @@ begin
   begin
     Canvas.Pen.Color := clBlack;
     Block.Canvas.Rectangle(0, 0, Width, Height);
+    Block.Canvas.TextOut((Width - Canvas.TextWidth('X')) div 2,
+      (Height - Canvas.TextHeight('X')) div 2, 'X');
+
   end;
 end;
 
@@ -173,6 +180,15 @@ begin
     end;
 end;
 
+procedure SetTextSettings(Block: TImage);
+begin
+  with Block, Canvas, Font do
+  begin
+    Font.Name := 'Times New Roman';
+    Font.Size := 12;
+  end;
+end;
+
 procedure CreateBlock(var Block: TImage; const NT: TNodeType;
   Owner: TWinControl);
 var
@@ -180,6 +196,7 @@ var
 begin
   Block := TImage.Create(Owner);
   Block.Parent := Owner;
+  SetTextSettings(Block);
   with Block do
   begin
     Canvas.Pen.Color := clBlack;
@@ -202,7 +219,8 @@ begin
     end;
 
     Tag := GetNodeMaxID - CountOfBranch;
-    OnDblClick := frmMain.BlockDblClick;
+    if NT <> ntHead then
+      OnDblClick := frmMain.BlockDblClick;
     OnClick := frmMain.BlockClick;
 
     Visible := True;
@@ -223,21 +241,72 @@ begin
   result := Copy(Arr, 0, Length(Arr));
 end;
 
+function GetBlockHeight(const ID: Integer): Integer;
+var
+  Block: TImage;
+begin
+  Block := GetBlock(ID);
+  result := 0;
+  if Block <> nil then
+    result := Block.Height;
+end;
+
+function GetLengthOfBranch(const A: TArrOfInd): Integer;
+var
+  I: Integer;
+begin
+  result := 0;
+  for I := Low(A) to High(A) do
+    if GetNodeType(A[I]) <> ntHead then
+      Inc(result, GetBlockHeight(A[I]));
+end;
+
+function GetMaxLengthOfBranch(const ID: Integer): Integer;
+var
+  A: TArrOfArrInd;
+  I, len: Integer;
+begin
+  result := 0;
+
+  A := GetArrOfBranches(ID);
+
+  for I := Low(A) to High(A) do
+  begin
+    len := GetLengthOfBranch(A[I]);
+    if len > result then
+      result := len
+  end;
+end;
+
 procedure InsertBlockInArray(ID: Integer; NT: TNodeType; Info: TDataString);
 var
   I: Integer;
   temp, Block, DiagramBlock: TImage;
-  IHeight, IWidth, IDOfNewBlock, NodeParentID: Integer;
+  IHeight, IWidth, IDOfNewBlock, NodeParentID, MaxLen: Integer;
   CurrNodeType: TNodeType;
   Arr: TArrOfInd;
 begin
   CurrNodeType := GetNodeType(CurrBlockID);
   DiagramBlock := GetBlock(ID);
 
+  MaxLen := GetMaxLengthOfBranch(ID);
+
   StdTop := DiagramBlock.Top;
   if CurrNodeType <> ntHead then
     StdTop := DiagramBlock.Top + DiagramBlock.Height;
   CreateBlock(temp, NT, frmMain.ScrollBoxMain);
+
+  if NT = ntIF then
+  begin
+    temp.Width := 2 * StdWidth;
+    temp.Picture.Bitmap.Width := 2 * StdWidth;
+  end
+  else
+  begin
+    temp.Width := DiagramBlock.Width;
+    temp.Picture.Bitmap.Width := DiagramBlock.Picture.Bitmap.Width;
+  end;
+
   IDOfNewBlock := temp.Tag;
   temp.Left := DiagramBlock.Left;
   Insert(temp, frmMain.Diagram, 0);
@@ -273,8 +342,12 @@ begin
       end;
   end;
 
-  if CurrNodeType <> ntHead then
+  if ((CurrNodeType <> ntHead) or (NT = ntIF)) and
+    (MaxLen < GetMaxLengthOfBranch(ID)) then
   begin
+    if (NT = ntIF) and (CurrNodeType = ntHead) then
+      Dec(IHeight, StdHeight);
+
     NodeParentID := IDOfNewBlock;
     while NodeParentID <> 0 do
     begin
@@ -319,14 +392,47 @@ begin
   frmMain.BlockClick(GetBlock(GetNodeMaxID()));
 end;
 
+procedure HighlightBlock(var Block: TImage);
+begin
+  MakeWhite();
+  CurrBlockID := Block.Tag;
+  with Block do
+  begin
+    Canvas.Brush.Color := clYellow;
+    PaintBlock[GetNodeType(Block.Tag)](Block);
+    Canvas.Brush.Color := clWhite;
+  end;
+end;
+
 { TfrmMain }
 
 procedure TfrmMain.frmMainCreate(Sender: TObject);
 begin
   SetLength(frmMain.Diagram, 1);
-  StdHeight := 0;
   CreateBlock(frmMain.Diagram[0], ntHead, frmMain.ScrollBoxMain);
-  StdHeight := 50;
+  frmMain.Diagram[0].Height := 0;
+end;
+
+procedure TfrmMain.ScrollBoxMainMouseWheelDown(Sender: TObject;
+  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+begin
+  if ssShift in Shift then
+    ScrollBoxMain.HorzScrollBar.Position :=
+      ScrollBoxMain.HorzScrollBar.Position + 20
+  else
+    ScrollBoxMain.VertScrollBar.Position :=
+      ScrollBoxMain.VertScrollBar.Position + 20;
+end;
+
+procedure TfrmMain.ScrollBoxMainMouseWheelUp(Sender: TObject;
+  Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+begin
+  if ssShift in Shift then
+    ScrollBoxMain.HorzScrollBar.Position :=
+      ScrollBoxMain.HorzScrollBar.Position - 20
+  else
+    ScrollBoxMain.VertScrollBar.Position :=
+      ScrollBoxMain.VertScrollBar.Position - 20;
 end;
 
 procedure TfrmMain.BlockDblClick(Sender: TObject);
@@ -380,16 +486,11 @@ begin
 end;
 
 procedure TfrmMain.BlockClick(Sender: TObject);
+var
+  Block: TImage;
 begin
-  MakeWhite();
-  CurrBlockID := (Sender as TImage).Tag;
-  with (Sender as TImage) do
-  begin
-    Canvas.Brush.Color := clYellow;
-    PaintBlock[GetNodeType(TImage(Sender).Tag)](TImage(Sender));
-    Canvas.Brush.Color := clWhite;
-  end;
-
+  Block := Sender as TImage;
+  HighlightBlock(Block);
 end;
 
 end.
