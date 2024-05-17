@@ -52,7 +52,7 @@ procedure InsertBlockInTree(ID: Integer; NT: TNodeType; Info: TDataString);
 
 function GetNodeType(const ID: Integer): TNodeType;
 
-function GetCaption(const ID: Integer): TDataString;
+function GetNodeCaption(const ID: Integer): TDataString;
 
 function GetNodeMaxID(): Integer;
 
@@ -62,7 +62,9 @@ function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
 
 function GetNodeParentID(const ID: Integer): Integer;
 
-function GetArrOfBranches(const ID: Integer): TArrOfArrInd;
+function GetArrOfBranches( { const ID: Integer } ): TArrOfArrInd;
+
+function IsNodeHaveKid(const ID: Integer): Boolean;
 
 implementation
 
@@ -227,12 +229,12 @@ begin
   result := GetNode(ID).next <> nil;
 end;
 
-function GetCaption(const ID: Integer): TDataString;
+function GetNodeCaption(const ID: Integer): TDataString;
 begin
   result := GetNodeInfo(ID).caption;
 end;
 
-procedure SetCaption(const ID: Integer; const caption: TDataString);
+procedure SetNodeCaption(const ID: Integer; const caption: TDataString);
 begin
   GetNode(ID)^.data.caption := caption;
 end;
@@ -266,7 +268,7 @@ begin
     Arr[I] := 0;
 end;
 
-function GetArrOfBranches(const ID: Integer): TArrOfArrInd;
+function GetArrOfBranches( { const ID: Integer } ): TArrOfArrInd;
 var
   Arr: TArrOfArrInd;
   procedure gab(Tree: PAdrOfNode);
@@ -303,7 +305,7 @@ var
 
 begin
   SetLength(Arr, 1);
-  gab(GetNodeParent(ID));
+  gab(TreeDiagram);
   result := Copy(Arr, 0, Length(Arr));
   SetLength(Arr, 0);
 end;
@@ -359,7 +361,7 @@ begin
   for I := Low(result) + 1 to High(result) do
     if result[I] = 0 then
     begin
-      SetLength(result, I + 1);
+      SetLength(result, I);
       break;
     end;
 end;
@@ -442,7 +444,7 @@ end;
 
 procedure ChangeBlockCaption(const ID: Integer; const Info: TDataString);
 begin
-  SetCaption(ID, Info);
+  SetNodeCaption(ID, Info);
 end;
 
 procedure CreateHead(var Tree: PAdrOfNode);
