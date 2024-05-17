@@ -222,6 +222,11 @@ begin
   result := GetNodeInfo(ID).nodeType;
 end;
 
+function IsNodeHaveKid(const ID: Integer): Boolean;
+begin
+  result := GetNode(ID).next <> nil;
+end;
+
 function GetCaption(const ID: Integer): TDataString;
 begin
   result := GetNodeInfo(ID).caption;

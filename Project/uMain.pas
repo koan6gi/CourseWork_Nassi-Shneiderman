@@ -87,15 +87,27 @@ const
     'Введите условие', 'Введите условие входа в цикл',
     'Введите условие выхода из цикла');
 
+const
+  StdWidthCycleBoard: Integer =25;
+  StdHeightCycleCaption: Integer = 50;
+  StdWidth: Integer = 100;
+  StdHeight: Integer = 50;
+  
 var
   StdLeft: Integer = 100;
-  StdWidth: Integer = 150;
-  StdHeight: Integer = 70;
   StdTop: Integer = 10;
   CurrBlockID: Integer = 0;
 
 Type
   TPaintBlock = procedure(var Block: TImage);
+
+function GetCycleBlockCaptionHeight(const ID: Integer): Integer;
+begin
+  if GetNodeCaption(ID) = '' then
+    result := StdHeightCycleCaption
+  else
+    result := StdHeightCycleCaption;
+end;
 
 procedure PaintProcessBlock(var Block: TImage);
 begin
@@ -125,7 +137,8 @@ begin
   with Block, Picture.Bitmap do
   begin
     Block.Canvas.Rectangle(0, 0, Block.Width, Height);
-    Block.Canvas.Rectangle(Width div 5, Height div 3, Width, Height);
+    Block.Canvas.Rectangle(StdWidthCycleBoard,
+      GetCycleBlockCaptionHeight(Block.Tag), Width, Height);
   end;
 end;
 
@@ -134,7 +147,7 @@ begin
   with Block, Picture.Bitmap do
   begin
     Block.Canvas.Rectangle(0, 0, Width, Height);
-    Block.Canvas.Rectangle(Width div 5, 2 * Height div 3, Width, 0);
+    Block.Canvas.Rectangle(StdWidthCycleBoard, Height - GetCycleBlockCaptionHeight(Block.Tag), Width, 0);
   end;
 end;
 
@@ -248,7 +261,13 @@ begin
   Block := GetBlock(ID);
   result := 0;
   if Block <> nil then
-    result := Block.Height;
+  begin
+    if GetNodeType(ID) = ntWhile then
+      result := GetCycleBlockCaptionHeight(ID)
+    else if not((GetNodeType(ID) = ntHead) and (IsNodeHaveKid(ID))) then
+      result := Block.Picture.Bitmap.Height
+  end;
+
 end;
 
 function GetLengthOfBranch(const A: TArrOfInd): Integer;
@@ -257,7 +276,6 @@ var
 begin
   result := 0;
   for I := Low(A) to High(A) do
-    if GetNodeType(A[I]) <> ntHead then
       Inc(result, GetBlockHeight(A[I]));
 end;
 
@@ -268,7 +286,7 @@ var
 begin
   result := 0;
 
-  A := GetArrOfBranches(ID);
+  A := GetArrOfBranches( { ID } );
 
   for I := Low(A) to High(A) do
   begin
@@ -285,6 +303,8 @@ var
   IHeight, IWidth, IDOfNewBlock, NodeParentID, MaxLen: Integer;
   CurrNodeType: TNodeType;
   Arr: TArrOfInd;
+  ConditionForShift: Boolean;
+  Parent: TImage;
 begin
   CurrNodeType := GetNodeType(CurrBlockID);
   DiagramBlock := GetBlock(ID);
@@ -331,28 +351,77 @@ begin
         temp.Height := temp.Height + IHeight;
 
         Inc(IHeight, Block.Height);
+        if (CurrNodeType = ntHead) then
+          Dec(IHeight, StdHeight);
       end;
     ntWhile:
       begin
+        CreateBlock(Block, ntHead, frmMain.ScrollBoxMain);
+        Block.Top := temp.Top + StdHeightCycleCaption;
+        Block.Left := temp.Left + StdWidthCycleBoard;
 
+        if temp.Width < StdWidth then
+          Block.Width := StdWidth
+        else
+          Block.Width := temp.Width - StdWidthCycleBoard;
+        Block.Picture.Bitmap.Width := Block.Width;
+
+        Insert(Block, frmMain.Diagram, 0);
+
+        temp.Width := Block.Width + StdWidthCycleBoard;
+        temp.Picture.Bitmap.Width := temp.Width;
+        
+        temp.Height := StdHeight + StdHeightCycleCaption;
+        temp.Picture.Bitmap.Height := temp.Height;
+
+        if CurrNodeType = ntHead then
+          Iheight := StdHeightCycleCaption
+        else
+          IHeight := temp.Height;
       end;
     ntRepeat:
       begin
+         CreateBlock(Block, ntHead, frmMain.ScrollBoxMain);
+        Block.Top := temp.Top;
+        Block.Left := temp.Left + StdWidthCycleBoard;
 
+        if temp.Width < StdWidth then
+          Block.Width := StdWidth
+        else
+          Block.Width := temp.Width - StdWidthCycleBoard;
+        Block.Picture.Bitmap.Width := Block.Width;
+
+        Insert(Block, frmMain.Diagram, 0);
+
+        temp.Width := Block.Width + StdWidthCycleBoard;
+        temp.Picture.Bitmap.Width := temp.Width;
+        
+        temp.Height := StdHeight + StdHeightCycleCaption;
+        temp.Picture.Bitmap.Height := temp.Height;
+
+        if CurrNodeType = ntHead then
+          Iheight := StdHeightCycleCaption
+        else
+          IHeight := temp.Height;
       end;
   end;
 
-  if ((CurrNodeType <> ntHead) or (NT = ntIF)) and
-    (MaxLen < GetMaxLengthOfBranch(ID)) then
-  begin
-    if (NT = ntIF) and (CurrNodeType = ntHead) then
-      Dec(IHeight, StdHeight);
+  // Все для сдвига вниз
+  ConditionForShift := ((CurrNodeType <> ntHead) or (NT = ntIF) or (NT = ntWhile) or (NT = ntRepeat)) and
+    (MaxLen < GetMaxLengthOfBranch(ID));
 
+  //ConditionForShift := ConditionForShift or ((NT = ntWhile) or (NT = ntRepeat));
+
+  if ConditionForShift then
+  begin
     NodeParentID := IDOfNewBlock;
     while NodeParentID <> 0 do
     begin
       NodeParentID := GetNodeParentID(NodeParentID);
-      GetBlock(NodeParentID).Height := GetBlock(NodeParentID).Height + IHeight;
+      Parent := GetBlock(NodeParentID);
+      Parent.Height := Parent.Height + IHeight;
+      if (GetNodeType(NodeParentID) = ntWhile) or (GetNodeType(NodeParentID) = ntRepeat) then
+        Parent.Picture.Bitmap.Height := Parent.Height;
     end;
     Arr := GetArrOfNextElementsInd(IDOfNewBlock);
     for I := Low(Arr) to High(Arr) do
@@ -368,7 +437,7 @@ begin
 
 end;
 
-procedure MakeWhite();
+procedure ClearAllocation();
 var
   I: Integer;
 begin
@@ -392,9 +461,9 @@ begin
   frmMain.BlockClick(GetBlock(GetNodeMaxID()));
 end;
 
-procedure HighlightBlock(var Block: TImage);
+procedure AllocateBlock(var Block: TImage);
 begin
-  MakeWhite();
+  ClearAllocation();
   CurrBlockID := Block.Tag;
   with Block do
   begin
@@ -490,7 +559,7 @@ var
   Block: TImage;
 begin
   Block := Sender as TImage;
-  HighlightBlock(Block);
+  AllocateBlock(Block);
 end;
 
 end.
