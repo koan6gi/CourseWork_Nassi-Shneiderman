@@ -58,13 +58,17 @@ function GetNodeMaxID(): Integer;
 
 procedure IncNodeMaxID();
 
+function GetArrOfAllNextElementsID(const ID: Integer): TArrOfInd;
+
 function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
 
 function GetNodeParentID(const ID: Integer): Integer;
 
-function GetArrOfBranches( { const ID: Integer } ): TArrOfArrInd;
+function GetArrOfBranches(): TArrOfArrInd;
 
 function IsNodeHaveKid(const ID: Integer): Boolean;
+
+function GetNodeKidID(const ID: Integer): Integer;
 
 implementation
 
@@ -229,6 +233,16 @@ begin
   result := GetNode(ID).next <> nil;
 end;
 
+function GetNodeKidID(const ID: Integer): Integer;
+var
+  kid: PAdrOfNode;
+begin
+  result := -1;
+  kid := GetNode(ID);
+  if kid <> nil then
+    result := kid.next.data.ID;
+end;
+
 function GetNodeCaption(const ID: Integer): TDataString;
 begin
   result := GetNodeInfo(ID).caption;
@@ -268,7 +282,7 @@ begin
     Arr[I] := 0;
 end;
 
-function GetArrOfBranches( { const ID: Integer } ): TArrOfArrInd;
+function GetArrOfBranches(): TArrOfArrInd;
 var
   Arr: TArrOfArrInd;
   procedure gab(Tree: PAdrOfNode);
@@ -310,7 +324,7 @@ begin
   SetLength(Arr, 0);
 end;
 
-function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
+function GetArrOfAllNextElementsID(const ID: Integer): TArrOfInd;
 var
   Arr: TArrOfInd;
   I, tempID: Integer;
@@ -355,6 +369,52 @@ begin
     if (NodeParent <> nil) and (NodeParent.data.ID <> 0) then
       MakeArr(NodeParent^.next);
   end;
+
+  result := Copy(Arr, 0, Length(Arr));
+
+  for I := Low(result) + 1 to High(result) do
+    if result[I] = 0 then
+    begin
+      SetLength(result, I);
+      break;
+    end;
+end;
+
+function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
+var
+  Arr: TArrOfInd;
+  I: Integer;
+  Node: PAdrOfNode;
+  procedure MakeArr(Tree: PAdrOfNode);
+  begin
+    while Tree <> nil do
+    begin
+      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
+      then
+      begin
+        MakeArr(Tree^.subNode.cycleBlock.cycleBranch);
+      end
+      else if (Tree^.data.nodeType = ntIF) then
+      begin
+        MakeArr(Tree^.subNode.ifBlock.trueBranch);
+        MakeArr(Tree^.subNode.ifBlock.falseBranch);
+      end;
+
+      if I > High(Arr) then
+        Add10El(Arr);
+      Arr[I] := Tree^.data.ID;
+      Inc(I);
+
+      Tree := Tree^.next;
+    end;
+  end;
+
+begin
+  I := 0;
+  SetLength(Arr, 0);
+  Node := GetNode(ID);
+  if Node <> nil then
+    MakeArr(Node^.next);
 
   result := Copy(Arr, 0, Length(Arr));
 
