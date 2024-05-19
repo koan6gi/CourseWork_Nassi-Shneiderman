@@ -78,6 +78,8 @@ type
 var
   frmMain: TfrmMain;
 
+function GetBlockHeight(const ID: Integer): Integer;
+
 implementation
 
 {$R *.dfm}
@@ -88,10 +90,11 @@ const
     'Введите условие выхода из цикла');
 
 const
-  StdWidthCycleBoard: Integer = 25;
-  StdHeightCycleCaption: Integer = 50;
+  StdWidthCycleBoard = 25;
+  StdHeightCycleCaption = 50;
   StdWidth: Integer = 100;
-  StdHeight: Integer = 50;
+  StdIfWidth = 200; // StdWidth * 2
+  StdHeight = 50;
 
 var
   StdLeft: Integer = 100;
@@ -203,23 +206,22 @@ begin
   end;
 end;
 
-procedure CreateBlock(var Block: TImage; const NT: TNodeType;
-  Owner: TWinControl);
+procedure CreateBlock(var Block: TImage; const NT: TNodeType);
 var
   CountOfBranch: Integer;
 begin
-  Block := TImage.Create(Owner);
-  Block.Parent := Owner;
+  Block := TImage.Create(frmMain.ScrollBoxMain);
+  Block.Parent := frmMain.ScrollBoxMain;
   SetTextSettings(Block);
   with Block do
   begin
     Canvas.Pen.Color := clBlack;
     Canvas.Brush.Color := clWhite;
 
-    SetBounds(StdLeft, StdTop, StdWidth, StdHeight);
+    // SetBounds(StdLeft, StdTop, StdWidth, StdHeight);
 
-    Block.Picture.Bitmap.Height := StdHeight;
-    Block.Picture.Bitmap.Width := StdWidth;
+    // Block.Picture.Bitmap.Height := StdHeight;
+    // Block.Picture.Bitmap.Width := StdWidth;
 
     case NT of
       ntIF:
@@ -309,6 +311,125 @@ begin
   end;
 end;
 
+procedure InsertBlock(var Block: TImage; const NT: TNodeType;
+  const ParentID: Integer);
+var
+  ParentWidth, ParentHeight, ParentLeft, ParentTop, KidWidth: Integer;
+  Parent, tempHead: TImage;
+  ParentType: TNodeType;
+begin
+  Parent := GetBlock(ParentID);
+  ParentWidth := Parent.Width;
+  ParentHeight := Parent.Height;
+  ParentLeft := Parent.Left;
+  ParentTop := Parent.Top;
+  ParentType := GetNodeType(ParentID);
+
+  CreateBlock(Block, NT);
+  Block.Left := ParentLeft;
+  if ParentType = ntHead then
+    Block.Top := ParentTop
+  else
+    Block.Top := ParentTop + ParentHeight;
+  Block.Height := StdHeight;
+  Block.Picture.Bitmap.Height := Block.Height;
+
+  Insert(Block, frmMain.Diagram, 0);
+  case NT of
+    ntIF:
+      begin
+        // Настройка размеров
+        if ParentWidth < StdIfWidth then
+        begin
+          Block.Width := StdIfWidth;
+        end
+        else
+        begin
+          Block.Width := ParentWidth;
+        end;
+        Block.Picture.Bitmap.Width := Block.Width;
+        Block.Height := Block.Height + StdHeight;
+        Block.Picture.Bitmap.Height := Block.Height;
+
+        // Создание подветвей
+        KidWidth := Block.Width div 2;
+        CreateBlock(tempHead, ntHead);
+        tempHead.Tag := Block.Tag + 1;
+        tempHead.Top := Block.Top + StdHeight;
+        tempHead.Left := ParentLeft;
+        tempHead.Height := StdHeight;
+        tempHead.Picture.Bitmap.Height := tempHead.Height;
+        tempHead.Width := KidWidth;
+        tempHead.Picture.Bitmap.Width := KidWidth;
+        Insert(tempHead, frmMain.Diagram, 0);
+
+        CreateBlock(tempHead, ntHead);
+        tempHead.Tag := Block.Tag + 2;
+        tempHead.Top := Block.Top + StdHeight;
+        tempHead.Left := ParentLeft + KidWidth;
+        tempHead.Height := StdHeight;
+        tempHead.Picture.Bitmap.Height := tempHead.Height;
+        tempHead.Width := KidWidth;
+        tempHead.Picture.Bitmap.Width := KidWidth;
+        Insert(tempHead, frmMain.Diagram, 0);
+      end;
+    ntWhile:
+      begin
+        // Настройка размеров
+        if ParentWidth < StdWidth then
+        begin
+          Block.Width := StdWidth;
+        end
+        else
+        begin
+          Block.Width := ParentWidth;
+        end;
+        Block.Picture.Bitmap.Width := Block.Width;
+        Block.Height := Block.Height + StdHeight;
+        Block.Picture.Bitmap.Height := Block.Height;
+
+        // Создание подветвей
+        KidWidth := Block.Width - StdWidthCycleBoard;
+        CreateBlock(tempHead, ntHead);
+        tempHead.Tag := Block.Tag + 1;
+        tempHead.Top := Block.Top + StdHeight;
+        tempHead.Left := ParentLeft + StdWidthCycleBoard;
+        tempHead.Height := StdHeight;
+        tempHead.Picture.Bitmap.Height := StdHeight;
+        tempHead.Width := KidWidth;
+        tempHead.Picture.Bitmap.Width := KidWidth;
+        Insert(tempHead, frmMain.Diagram, 0);
+      end;
+    ntRepeat:
+      begin
+        // Настройка размеров
+        if ParentWidth < StdWidth then
+        begin
+          Block.Width := StdWidth;
+        end
+        else
+        begin
+          Block.Width := ParentWidth;
+        end;
+        Block.Picture.Bitmap.Width := Block.Width;
+        Block.Height := Block.Height + StdHeight;
+        Block.Picture.Bitmap.Height := Block.Height;
+
+        // Создание подветвей
+        KidWidth := Block.Width - StdWidthCycleBoard;
+        CreateBlock(tempHead, ntHead);
+        tempHead.Tag := Block.Tag + 1;
+        tempHead.Top := Block.Top;
+        tempHead.Left := ParentLeft + StdWidthCycleBoard;
+        tempHead.Height := StdHeight;
+        tempHead.Picture.Bitmap.Height := StdHeight;
+        tempHead.Width := KidWidth;
+        tempHead.Picture.Bitmap.Width := KidWidth;
+        Insert(tempHead, frmMain.Diagram, 0);
+      end;
+  end;
+end;
+
 procedure InsertBlockInArray(ID: Integer; NT: TNodeType; Info: TDataString);
 var
   I: Integer;
@@ -324,100 +445,11 @@ begin
 
   MaxLen := GetMaxLengthOfBranch(ID);
 
-  StdTop := DiagramBlock.Top;
-  if CurrNodeType <> ntHead then
-    StdTop := DiagramBlock.Top + DiagramBlock.Height;
-  CreateBlock(temp, NT, frmMain.ScrollBoxMain);
-
-  if NT = ntIF then
-  begin
-    temp.Width := 2 * StdWidth;
-    temp.Picture.Bitmap.Width := 2 * StdWidth;
-  end
-  else
-  begin
-    temp.Width := DiagramBlock.Width;
-    temp.Picture.Bitmap.Width := DiagramBlock.Picture.Bitmap.Width;
-  end;
-
   IDOfNewBlock := temp.Tag;
   temp.Left := DiagramBlock.Left;
   Insert(temp, frmMain.Diagram, 0);
 
   IHeight := temp.Height;
-
-  case NT of
-    ntIF:
-      begin
-        CreateBlock(Block, ntHead, frmMain.ScrollBoxMain);
-        Block.Tag := Block.Tag - 1;
-        Block.Top := Block.Top + temp.Height;
-        Block.Left := temp.Left;
-        Insert(Block, frmMain.Diagram, 0);
-        IWidth := Block.Width;
-
-        CreateBlock(Block, ntHead, frmMain.ScrollBoxMain);
-        Block.Left := temp.Left + IWidth;
-        Block.Top := Block.Top + temp.Height;
-        Insert(Block, frmMain.Diagram, 0);
-
-        temp.Height := temp.Height + IHeight;
-
-        Inc(IHeight, Block.Height);
-        if (CurrNodeType = ntHead) then
-          Dec(IHeight, StdHeight);
-      end;
-    ntWhile:
-      begin
-        CreateBlock(Block, ntHead, frmMain.ScrollBoxMain);
-        Block.Top := temp.Top + StdHeightCycleCaption;
-        Block.Left := temp.Left + StdWidthCycleBoard;
-
-        if temp.Width < StdWidth then
-          Block.Width := StdWidth
-        else
-          Block.Width := temp.Width - StdWidthCycleBoard;
-        Block.Picture.Bitmap.Width := Block.Width;
-
-        Insert(Block, frmMain.Diagram, 0);
-
-        temp.Width := Block.Width + StdWidthCycleBoard;
-        temp.Picture.Bitmap.Width := temp.Width;
-
-        temp.Height := StdHeight + StdHeightCycleCaption;
-        temp.Picture.Bitmap.Height := temp.Height;
-
-        if CurrNodeType = ntHead then
-          IHeight := StdHeightCycleCaption
-        else
-          IHeight := temp.Height;
-      end;
-    ntRepeat:
-      begin
-        CreateBlock(Block, ntHead, frmMain.ScrollBoxMain);
-        Block.Top := temp.Top;
-        Block.Left := temp.Left + StdWidthCycleBoard;
-
-        if temp.Width < StdWidth then
-          Block.Width := StdWidth
-        else
-          Block.Width := temp.Width - StdWidthCycleBoard;
-        Block.Picture.Bitmap.Width := Block.Width;
-
-        Insert(Block, frmMain.Diagram, 0);
-
-        temp.Width := Block.Width + StdWidthCycleBoard;
-        temp.Picture.Bitmap.Width := temp.Width;
-
-        temp.Height := StdHeight + StdHeightCycleCaption;
-        temp.Picture.Bitmap.Height := temp.Height;
-
-        if CurrNodeType = ntHead then
-          IHeight := StdHeightCycleCaption
-        else
-          IHeight := temp.Height;
-      end;
-  end;
 
   // Все для сдвига вниз
   ConditionForShift := (MaxLen < GetMaxLengthOfBranch(ID));
@@ -428,45 +460,45 @@ begin
   if ConditionForShift then
   begin
     IHeight := GetMaxLengthOfBranch(ID) - MaxLen;
-    NodeParentID := IDOfNewBlock;
     while NodeParentID <> 0 do
     begin
-      NodeParentID := GetNodeParentID(NodeParentID);
+
       Parent := GetBlock(NodeParentID);
       Parent.Height := Parent.Height + IHeight;
       if (GetNodeType(NodeParentID) = ntWhile) or
         (GetNodeType(NodeParentID) = ntRepeat) then
         Parent.Picture.Bitmap.Height := Parent.Height;
+      NodeParentID := GetNodeParentID(NodeParentID);
     end;
     Arr := GetArrOfAllNextElementsInd(IDOfNewBlock);
     for I := Low(Arr) to High(Arr) do
       frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
   end
   else if ((NodeParentType = ntWhile) or (NodeParentType = ntRepeat)) and
-    ((CurrNodeType <> ntHead) or ((NT = ntWhile) or (NT = ntRepeat))) then
+    ((CurrNodeType <> ntHead) or ((NT <> ntProcess) and (NT <> ntHead))) then
   begin
     repeat
       Parent := GetBlock(NodeParentID);
       Parent.Height := Parent.Height + IHeight;
       Parent.Picture.Bitmap.Height := Parent.Height;
       Arr := GetArrOfNextElementsInd(NodeParentID);
-        for I := Low(Arr) to High(Arr) do
-      frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
+      for I := Low(Arr) to High(Arr) do
+        frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
 
       NodeParentID := GetNodeParentID(NodeParentID);
       NodeParentType := GetNodeType(NodeParentID);
     until (NodeParentType <> ntWhile) and (NodeParentType <> ntRepeat);
   end
-  else if NodeParentType = ntIf then
+  else if NodeParentType = ntIF then
   begin
     NodeParentID := IDOfNewBlock;
     repeat
       Arr := GetArrOfNextElementsInd(NodeParentID);
       for I := Low(Arr) to High(Arr) do
         frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
-      NodeParentID := GetNodeParentID(NodeParentID);
       NodeParentType := GetNodeType(NodeParentID);
-    until (NodeParentType <> ntIf) or (NodeParentID = 0);
+      NodeParentID := GetNodeParentID(NodeParentID);
+    until (NodeParentType <> ntIF) or (GetNodeParentID(NodeParentID) = 0);
   end;
 
 end;
@@ -519,7 +551,16 @@ end;
 procedure TfrmMain.frmMainCreate(Sender: TObject);
 begin
   SetLength(frmMain.Diagram, 1);
-  CreateBlock(frmMain.Diagram[0], ntHead, frmMain.ScrollBoxMain);
+  CreateBlock(frmMain.Diagram[0], ntHead);
+  with frmMain.Diagram[0] do
+  begin
+    Left := StdLeft;
+    Top := StdTop;
+    Height := StdHeight;
+    Width := StdWidth;
+    Picture.Bitmap.Height := StdHeight;
+    Picture.Bitmap.Width := StdWidth;
+  end;
   frmMain.Diagram[0].Height := 0;
 end;
 
