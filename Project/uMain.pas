@@ -75,10 +75,21 @@ type
     Diagram: array of TImage;
   end;
 
+const
+  StdWidthCycleBoard = 25;
+  StdHeightCycleCaption = 50;
+  StdWidth: Integer = 100;
+  StdIfWidth = 200; // StdWidth * 2
+  StdHeight = 50;
+
 var
   frmMain: TfrmMain;
 
 function GetBlockHeight(const ID: Integer): Integer;
+procedure SetBlockWidth(const ID, NewWidth: Integer);
+procedure SetBlockLeft(const ID, NewLeft: Integer);
+function GetBlockLeft(const ID: Integer): Integer;
+function GetBlockWidth(const ID: Integer): Integer;
 
 implementation
 
@@ -88,13 +99,6 @@ const
   EditInfoMessages: array [TNodeType] of String = ('', 'Введите текст',
     'Введите условие', 'Введите условие входа в цикл',
     'Введите условие выхода из цикла');
-
-const
-  StdWidthCycleBoard = 25;
-  StdHeightCycleCaption = 50;
-  StdWidth: Integer = 100;
-  StdIfWidth = 200; // StdWidth * 2
-  StdHeight = 50;
 
 var
   StdLeft: Integer = 100;
@@ -215,6 +219,53 @@ begin
     Block.Height := Block.Height + SH;
     if GetNodeType(ID) <> ntIF then
       Block.Picture.Bitmap.Height := Block.Height;
+  end;
+end;
+
+procedure SetBlockWidth(const ID, NewWidth: Integer);
+var
+  Block: TImage;
+begin
+  Block := GetBlock(ID);
+  if Block <> nil then
+  begin
+    Block.Width := NewWidth;
+    Block.Picture.Bitmap.Width := NewWidth;
+  end;
+end;
+
+function GetBlockWidth(const ID: Integer): Integer;
+var
+  Block: TImage;
+begin
+  result := 0;
+  Block := GetBlock(ID);
+  if Block <> nil then
+  begin
+    result := Block.Width;
+  end;
+end;
+
+procedure SetBlockLeft(const ID, NewLeft: Integer);
+var
+  Block: TImage;
+begin
+  Block := GetBlock(ID);
+  if Block <> nil then
+  begin
+    Block.left := NewLeft;
+  end;
+end;
+
+function GetBlockLeft(const ID: Integer): Integer;
+var
+  Block: TImage;
+begin
+  Block := GetBlock(ID);
+  result := 0;
+  if Block <> nil then
+  begin
+    result := Block.left;
   end;
 end;
 
@@ -466,9 +517,9 @@ begin
   end;
 end;
 
-procedure PrepareArrToShift(const ParentID: Integer; var Arr: TArrOfLen_ID);
+procedure PrepareArrToShift(const PrevBlockID: Integer; var Arr: TArrOfLen_ID);
 begin
-  Arr := GetArrOfLen_ID(ParentID);
+  Arr := GetArrOfLen_ID(PrevBlockID);
 end;
 
 function GetArrToShift(const ID: Integer; var OldArr: TArrOfLen_ID)
@@ -500,83 +551,24 @@ begin
       begin
         AddBlockTop(ArrToShift[I].IDs[j], ShiftLen);
       end;
-      if (ArrToShift[i].ParentID <> 0) and (ArrToShift[i + 1].Length <> 0) then
-        AddBlockHeight(ArrToShift[i].ParentID, ShiftLen);
+      if (ArrToShift[I].ParentID <> 0) and (ArrToShift[I + 1].Length <> 0) then
+        AddBlockHeight(ArrToShift[I].ParentID, ShiftLen);
     end;
   end;
 end;
 
-// TODO: Fix InsertBlockInArray
 procedure InsertBlockInArray(ID: Integer; NT: TNodeType; Info: TDataString);
 var
-  // I: Integer;
-  // temp, Block, DiagramBlock: TImage;
-  // IHeight, IWidth, IDOfNewBlock, NodeParentID, MaxLen: Integer;
-  // CurrNodeType, NodeParentType: TNodeType;
-  // Arr: TArrOfInd;
-  // ConditionForShift: Boolean;
-  // Parent: TImage;
   ArrToShift: TArrOfLen_ID;
   Block: TImage;
-  ParentID: Integer;
+  ParentID, IDOfNewBlock: Integer;
 begin
   ParentID := CurrBlockID;
   PrepareArrToShift(ParentID, ArrToShift);
   CorrectBlock(Block, NT, ParentID);
-
-  ShiftBlocks(Block.Tag, ArrToShift);
-
-
-  // // Все для сдвига вниз
-  // ConditionForShift := (MaxLen < GetMaxLengthOfBranch(ID));
-  //
-  // NodeParentType := GetNodeType(GetNodeParentID(IDOfNewBlock));
-  // NodeParentID := GetNodeParentID(IDOfNewBlock);
-  //
-  // if ConditionForShift then
-  // begin
-  // IHeight := GetMaxLengthOfBranch(ID) - MaxLen;
-  // while NodeParentID <> 0 do
-  // begin
-  //
-  // Parent := GetBlock(NodeParentID);
-  // Parent.Height := Parent.Height + IHeight;
-  // if (GetNodeType(NodeParentID) = ntWhile) or
-  // (GetNodeType(NodeParentID) = ntRepeat) then
-  // Parent.Picture.Bitmap.Height := Parent.Height;
-  // NodeParentID := GetNodeParentID(NodeParentID);
-  // end;
-  // Arr := GetArrOfAllNextElementsInd(IDOfNewBlock);
-  // for I := Low(Arr) to High(Arr) do
-  // frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
-  // end
-  // else if ((NodeParentType = ntWhile) or (NodeParentType = ntRepeat)) and
-  // ((CurrNodeType <> ntHead) or ((NT <> ntProcess) and (NT <> ntHead))) then
-  // begin
-  // repeat
-  // Parent := GetBlock(NodeParentID);
-  // Parent.Height := Parent.Height + IHeight;
-  // Parent.Picture.Bitmap.Height := Parent.Height;
-  // Arr := GetArrOfNextElementsInd(NodeParentID);
-  // for I := Low(Arr) to High(Arr) do
-  // frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
-  //
-  // NodeParentID := GetNodeParentID(NodeParentID);
-  // NodeParentType := GetNodeType(NodeParentID);
-  // until (NodeParentType <> ntWhile) and (NodeParentType <> ntRepeat);
-  // end
-  // else if NodeParentType = ntIF then
-  // begin
-  // NodeParentID := IDOfNewBlock;
-  // repeat
-  // Arr := GetArrOfNextElementsInd(NodeParentID);
-  // for I := Low(Arr) to High(Arr) do
-  // frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
-  // NodeParentType := GetNodeType(NodeParentID);
-  // NodeParentID := GetNodeParentID(NodeParentID);
-  // until (NodeParentType <> ntIF) or (GetNodeParentID(NodeParentID) = 0);
-  // end;
-
+  IDOfNewBlock := Block.Tag;
+  CorrectDiagramWidth(IDOfNewBlock, GetBlockWidth(IDOfNewBlock));
+  ShiftBlocks(IDOfNewBlock, ArrToShift);
 end;
 
 procedure ChangeBlockInArray(ID: Integer; Info: TDataString);
@@ -586,7 +578,7 @@ begin
 
 end;
 
-procedure ClearAllocation();
+procedure DrawDiagram();
 var
   I: Integer;
 begin
@@ -612,7 +604,7 @@ end;
 
 procedure AllocateBlock(var Block: TImage);
 begin
-  ClearAllocation();
+  DrawDiagram();
   CurrBlockID := Block.Tag;
   with Block do
   begin
@@ -642,24 +634,26 @@ end;
 
 procedure TfrmMain.ScrollBoxMainMouseWheelDown(Sender: TObject;
   Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+var
+  ScrollBox: TScrollBox;
 begin
+  ScrollBox := Sender as TScrollBox;
   if ssShift in Shift then
-    ScrollBoxMain.HorzScrollBar.Position :=
-      ScrollBoxMain.HorzScrollBar.Position + 20
+    ScrollBox.HorzScrollBar.Position := ScrollBox.HorzScrollBar.Position + 20
   else
-    ScrollBoxMain.VertScrollBar.Position :=
-      ScrollBoxMain.VertScrollBar.Position + 20;
+    ScrollBox.VertScrollBar.Position := ScrollBox.VertScrollBar.Position + 20;
 end;
 
 procedure TfrmMain.ScrollBoxMainMouseWheelUp(Sender: TObject;
   Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
+var
+  ScrollBox: TScrollBox;
 begin
+  ScrollBox := Sender as TScrollBox;
   if ssShift in Shift then
-    ScrollBoxMain.HorzScrollBar.Position :=
-      ScrollBoxMain.HorzScrollBar.Position - 20
+    ScrollBox.HorzScrollBar.Position := ScrollBox.HorzScrollBar.Position - 20
   else
-    ScrollBoxMain.VertScrollBar.Position :=
-      ScrollBoxMain.VertScrollBar.Position - 20;
+    ScrollBox.VertScrollBar.Position := ScrollBox.VertScrollBar.Position - 20;
 end;
 
 procedure TfrmMain.BlockDblClick(Sender: TObject);

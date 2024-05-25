@@ -81,6 +81,8 @@ function GetNodeKidID(const ID: Integer): Integer;
 
 function GetArrOfLen_ID(const ID: Integer): TArrOfLen_ID;
 
+procedure CorrectDiagramWidth(const ID, NewBlockWidth: Integer);
+
 implementation
 
 uses uMain;
@@ -475,7 +477,6 @@ begin
   end;
 end;
 
-// TODO: Check GetArrOfLen_ID
 function GetArrOfLen_ID(const ID: Integer): TArrOfLen_ID;
 var
   Node, Head: PAdrOfNode;
@@ -492,13 +493,13 @@ begin
       Add10El(result);
     result[I].Length := GetBranchLength(Head);
     result[I].IDs := GetArrOfNextElementsID(Node.data.ID);
-    result[i].ParentID := -1;
+    result[I].ParentID := -1;
     if Head.data.ID = 0 then
       Flag := False;
     Node := GetNodeParent(Head.data.ID);
-    result[i].ParentID := Node.data.ID;
+    result[I].ParentID := Node.data.ID;
     Head := GetNodeHead(Node.data.ID);
-    Inc(i);
+    Inc(I);
   end;
 
 end;
@@ -536,6 +537,68 @@ end;
 procedure ChangeBlockCaption(const ID: Integer; const Info: TDataString);
 begin
   SetNodeCaption(ID, Info);
+end;
+
+procedure CorrectDiagramWidth(const ID, NewBlockWidth: Integer);
+var
+  NewWidth, CurrID: Integer;
+  Parent: PAdrOfNode;
+
+  procedure cdw(Tree: PAdrOfNode; const NewWidth, NewLeft: Integer);
+  var
+    tempNode: PAdrOfNode;
+  begin
+    while Tree <> nil do
+    begin
+      SetBlockWidth(Tree.data.ID, NewWidth);
+      if NewLeft <> 0 then
+      begin
+        SetBlockLeft(Tree.data.ID, NewLeft);
+      end;
+
+      case Tree.data.nodeType of
+        ntIF:
+          begin
+            cdw(Tree.subNode.ifBlock.trueBranch, NewWidth div 2,
+              GetBlockLeft(Tree.data.ID));
+            tempNode := Tree.subNode.ifBlock.trueBranch;
+            cdw(Tree.subNode.ifBlock.falseBranch, NewWidth div 2,
+              GetBlockLeft(tempNode.data.ID) + GetBlockWidth(tempNode.data.ID));
+          end;
+        ntWhile, ntRepeat:
+          begin
+            cdw(Tree.subNode.cycleBlock.cycleBranch,
+              NewWidth - StdWidthCycleBoard, GetBlockLeft(Tree.data.ID) +
+              StdWidthCycleBoard);
+          end;
+      end;
+
+      Tree := Tree.next;
+    end;
+
+  end;
+
+begin
+  CurrID := ID;
+  NewWidth := NewBlockWidth;
+  while CurrID <> 0 do
+  begin
+    Parent := GetNodeParent(CurrID);
+    case Parent.data.nodeType of
+      ntIF:
+        begin
+          NewWidth := NewWidth * 2;
+        end;
+      ntWhile, ntRepeat:
+        begin
+          NewWidth := NewWidth + StdWidthCycleBoard;
+        end;
+    end;
+    CurrID := Parent.data.ID;
+  end;
+
+  cdw(TreeDiagram, NewWidth, 0);
+
 end;
 
 procedure CreateHead(var Tree: PAdrOfNode);
