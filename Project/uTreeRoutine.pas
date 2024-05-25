@@ -46,7 +46,7 @@ Type
   TLength = Integer;
 
   TLen_ID = record
-    Length: Integer;
+    Length, ParentID: Integer;
     IDs: TArrOfInd;
   end;
 
@@ -78,6 +78,8 @@ function GetArrOfBranches(): TArrOfArrInd;
 function IsNodeHaveKid(const ID: Integer): Boolean;
 
 function GetNodeKidID(const ID: Integer): Integer;
+
+function GetArrOfLen_ID(const ID: Integer): TArrOfLen_ID;
 
 implementation
 
@@ -339,12 +341,10 @@ function GetBranchLength(Tree: PAdrOfNode): Integer;
 var
   MaxLength, CurrLength: Integer;
 
-  function gbl(Tree: PAdrOfNode): Integer;
+  procedure gbl(Tree: PAdrOfNode);
   var
-    I: Integer;
     LengthTrueBranch, LengthFalseBranch: Integer;
   begin
-
     while (Tree <> nil) do
     begin
       Inc(CurrLength, GetBlockHeight(Tree.data.ID));
@@ -475,6 +475,7 @@ begin
   end;
 end;
 
+// TODO: Check GetArrOfLen_ID
 function GetArrOfLen_ID(const ID: Integer): TArrOfLen_ID;
 var
   Node, Head: PAdrOfNode;
@@ -491,15 +492,14 @@ begin
       Add10El(result);
     result[I].Length := GetBranchLength(Head);
     result[I].IDs := GetArrOfNextElementsID(Node.data.ID);
+    result[i].ParentID := -1;
     if Head.data.ID = 0 then
       Flag := False;
     Node := GetNodeParent(Head.data.ID);
+    result[i].ParentID := Node.data.ID;
     Head := GetNodeHead(Node.data.ID);
+    Inc(i);
   end;
-
-  for I := Low(result) to High(result) do
-    if Length(result[I].IDs) = 0 then
-      SetLength(result, I);
 
 end;
 

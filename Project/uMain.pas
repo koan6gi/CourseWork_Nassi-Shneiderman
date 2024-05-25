@@ -173,15 +173,49 @@ const
 
 function GetBlock(const ID: Integer): TImage;
 var
-  I: Integer;
+  left, right, mid: Integer;
+  flag: Boolean;
 begin
   result := nil;
-  for I := Low(frmMain.Diagram) to High(frmMain.Diagram) do
-    if frmMain.Diagram[I].Tag = ID then
+  flag := true;
+  left := low(frmMain.Diagram);
+  right := high(frmMain.Diagram);
+
+  while (left <= right) and (flag) do
+  begin
+    mid := (left + right) div 2;
+    if ID = frmMain.Diagram[mid].Tag then
     begin
-      result := frmMain.Diagram[I];
-      break;
-    end;
+      result := frmMain.Diagram[mid];
+      flag := false;
+    end
+    else if ID < frmMain.Diagram[mid].Tag then
+      right := mid - 1
+    else
+      left := mid + 1;
+  end;
+end;
+
+procedure AddBlockTop(const ID, SH: Integer);
+var
+  Block: TImage;
+begin
+  Block := GetBlock(ID);
+  if Block <> nil then
+    Block.Top := Block.Top + SH;
+end;
+
+procedure AddBlockHeight(const ID, SH: Integer);
+var
+  Block: TImage;
+begin
+  Block := GetBlock(ID);
+  if Block <> nil then
+  begin
+    Block.Height := Block.Height + SH;
+    if GetNodeType(ID) <> ntIF then
+      Block.Picture.Bitmap.Height := Block.Height;
+  end;
 end;
 
 function GetBlockInd(const ID: Integer): Integer;
@@ -239,7 +273,7 @@ begin
       OnDblClick := frmMain.BlockDblClick;
     OnClick := frmMain.BlockClick;
 
-    Visible := True;
+    Visible := true;
     Show;
     PaintBlock[NT](Block);
   end;
@@ -311,7 +345,7 @@ begin
   end;
 end;
 
-procedure InsertBlock(var Block: TImage; const NT: TNodeType;
+procedure CorrectBlock(var Block: TImage; const NT: TNodeType;
   const ParentID: Integer);
 var
   ParentWidth, ParentHeight, ParentLeft, ParentTop, KidWidth: Integer;
@@ -321,20 +355,22 @@ begin
   Parent := GetBlock(ParentID);
   ParentWidth := Parent.Width;
   ParentHeight := Parent.Height;
-  ParentLeft := Parent.Left;
+  ParentLeft := Parent.left;
   ParentTop := Parent.Top;
   ParentType := GetNodeType(ParentID);
 
   CreateBlock(Block, NT);
-  Block.Left := ParentLeft;
+  Block.left := ParentLeft;
   if ParentType = ntHead then
     Block.Top := ParentTop
   else
     Block.Top := ParentTop + ParentHeight;
   Block.Height := StdHeight;
   Block.Picture.Bitmap.Height := Block.Height;
+  Block.Width := ParentWidth;
+  Block.Picture.Bitmap.Width := ParentWidth;
 
-  Insert(Block, frmMain.Diagram, 0);
+  Insert(Block, frmMain.Diagram, Length(frmMain.Diagram));
   case NT of
     ntIF:
       begin
@@ -349,29 +385,29 @@ begin
         end;
         Block.Picture.Bitmap.Width := Block.Width;
         Block.Height := Block.Height + StdHeight;
-        Block.Picture.Bitmap.Height := Block.Height;
+        Block.Picture.Bitmap.Height := StdHeight;
 
         // Создание подветвей
         KidWidth := Block.Width div 2;
         CreateBlock(tempHead, ntHead);
         tempHead.Tag := Block.Tag + 1;
         tempHead.Top := Block.Top + StdHeight;
-        tempHead.Left := ParentLeft;
+        tempHead.left := ParentLeft;
         tempHead.Height := StdHeight;
         tempHead.Picture.Bitmap.Height := tempHead.Height;
         tempHead.Width := KidWidth;
         tempHead.Picture.Bitmap.Width := KidWidth;
-        Insert(tempHead, frmMain.Diagram, 0);
+        Insert(tempHead, frmMain.Diagram, Length(frmMain.Diagram));
 
         CreateBlock(tempHead, ntHead);
         tempHead.Tag := Block.Tag + 2;
         tempHead.Top := Block.Top + StdHeight;
-        tempHead.Left := ParentLeft + KidWidth;
+        tempHead.left := ParentLeft + KidWidth;
         tempHead.Height := StdHeight;
         tempHead.Picture.Bitmap.Height := tempHead.Height;
         tempHead.Width := KidWidth;
         tempHead.Picture.Bitmap.Width := KidWidth;
-        Insert(tempHead, frmMain.Diagram, 0);
+        Insert(tempHead, frmMain.Diagram, Length(frmMain.Diagram));
       end;
     ntWhile:
       begin
@@ -393,12 +429,12 @@ begin
         CreateBlock(tempHead, ntHead);
         tempHead.Tag := Block.Tag + 1;
         tempHead.Top := Block.Top + StdHeight;
-        tempHead.Left := ParentLeft + StdWidthCycleBoard;
+        tempHead.left := ParentLeft + StdWidthCycleBoard;
         tempHead.Height := StdHeight;
         tempHead.Picture.Bitmap.Height := StdHeight;
         tempHead.Width := KidWidth;
         tempHead.Picture.Bitmap.Width := KidWidth;
-        Insert(tempHead, frmMain.Diagram, 0);
+        Insert(tempHead, frmMain.Diagram, Length(frmMain.Diagram));
       end;
     ntRepeat:
       begin
@@ -420,86 +456,126 @@ begin
         CreateBlock(tempHead, ntHead);
         tempHead.Tag := Block.Tag + 1;
         tempHead.Top := Block.Top;
-        tempHead.Left := ParentLeft + StdWidthCycleBoard;
+        tempHead.left := ParentLeft + StdWidthCycleBoard;
         tempHead.Height := StdHeight;
         tempHead.Picture.Bitmap.Height := StdHeight;
         tempHead.Width := KidWidth;
         tempHead.Picture.Bitmap.Width := KidWidth;
-        Insert(tempHead, frmMain.Diagram, 0);
+        Insert(tempHead, frmMain.Diagram, Length(frmMain.Diagram));
       end;
   end;
 end;
 
-procedure InsertBlockInArray(ID: Integer; NT: TNodeType; Info: TDataString);
+procedure PrepareArrToShift(const ParentID: Integer; var Arr: TArrOfLen_ID);
+begin
+  Arr := GetArrOfLen_ID(ParentID);
+end;
+
+function GetArrToShift(const ID: Integer; var OldArr: TArrOfLen_ID)
+  : TArrOfLen_ID;
 var
   I: Integer;
-  temp, Block, DiagramBlock: TImage;
-  IHeight, IWidth, IDOfNewBlock, NodeParentID, MaxLen: Integer;
-  CurrNodeType, NodeParentType: TNodeType;
-  Arr: TArrOfInd;
-  ConditionForShift: Boolean;
-  Parent: TImage;
 begin
-  CurrNodeType := GetNodeType(CurrBlockID);
-  DiagramBlock := GetBlock(ID);
-
-  MaxLen := GetMaxLengthOfBranch(ID);
-
-  IDOfNewBlock := temp.Tag;
-  temp.Left := DiagramBlock.Left;
-  Insert(temp, frmMain.Diagram, 0);
-
-  IHeight := temp.Height;
-
-  // Все для сдвига вниз
-  ConditionForShift := (MaxLen < GetMaxLengthOfBranch(ID));
-
-  NodeParentType := GetNodeType(GetNodeParentID(IDOfNewBlock));
-  NodeParentID := GetNodeParentID(IDOfNewBlock);
-
-  if ConditionForShift then
+  result := GetArrOfLen_ID(ID);
+  for I := Low(result) to High(result) do
   begin
-    IHeight := GetMaxLengthOfBranch(ID) - MaxLen;
-    while NodeParentID <> 0 do
-    begin
-
-      Parent := GetBlock(NodeParentID);
-      Parent.Height := Parent.Height + IHeight;
-      if (GetNodeType(NodeParentID) = ntWhile) or
-        (GetNodeType(NodeParentID) = ntRepeat) then
-        Parent.Picture.Bitmap.Height := Parent.Height;
-      NodeParentID := GetNodeParentID(NodeParentID);
-    end;
-    Arr := GetArrOfAllNextElementsInd(IDOfNewBlock);
-    for I := Low(Arr) to High(Arr) do
-      frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
-  end
-  else if ((NodeParentType = ntWhile) or (NodeParentType = ntRepeat)) and
-    ((CurrNodeType <> ntHead) or ((NT <> ntProcess) and (NT <> ntHead))) then
-  begin
-    repeat
-      Parent := GetBlock(NodeParentID);
-      Parent.Height := Parent.Height + IHeight;
-      Parent.Picture.Bitmap.Height := Parent.Height;
-      Arr := GetArrOfNextElementsInd(NodeParentID);
-      for I := Low(Arr) to High(Arr) do
-        frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
-
-      NodeParentID := GetNodeParentID(NodeParentID);
-      NodeParentType := GetNodeType(NodeParentID);
-    until (NodeParentType <> ntWhile) and (NodeParentType <> ntRepeat);
-  end
-  else if NodeParentType = ntIF then
-  begin
-    NodeParentID := IDOfNewBlock;
-    repeat
-      Arr := GetArrOfNextElementsInd(NodeParentID);
-      for I := Low(Arr) to High(Arr) do
-        frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
-      NodeParentType := GetNodeType(NodeParentID);
-      NodeParentID := GetNodeParentID(NodeParentID);
-    until (NodeParentType <> ntIF) or (GetNodeParentID(NodeParentID) = 0);
+    result[I].Length := result[I].Length - OldArr[I].Length;
   end;
+end;
+
+procedure ShiftBlocks(const ID: Integer; var OldArr: TArrOfLen_ID);
+var
+  ArrToShift: TArrOfLen_ID;
+  I, j, ShiftLen: Integer;
+
+begin
+  ArrToShift := GetArrToShift(ID, OldArr);
+
+  for I := Low(ArrToShift) to High(ArrToShift) do
+  begin
+    ShiftLen := ArrToShift[I].Length;
+    if ShiftLen <> 0 then
+    begin
+      for j := Low(ArrToShift[I].IDs) to High(ArrToShift[I].IDs) do
+      begin
+        AddBlockTop(ArrToShift[I].IDs[j], ShiftLen);
+      end;
+      if (ArrToShift[i].ParentID <> 0) and (ArrToShift[i + 1].Length <> 0) then
+        AddBlockHeight(ArrToShift[i].ParentID, ShiftLen);
+    end;
+  end;
+end;
+
+// TODO: Fix InsertBlockInArray
+procedure InsertBlockInArray(ID: Integer; NT: TNodeType; Info: TDataString);
+var
+  // I: Integer;
+  // temp, Block, DiagramBlock: TImage;
+  // IHeight, IWidth, IDOfNewBlock, NodeParentID, MaxLen: Integer;
+  // CurrNodeType, NodeParentType: TNodeType;
+  // Arr: TArrOfInd;
+  // ConditionForShift: Boolean;
+  // Parent: TImage;
+  ArrToShift: TArrOfLen_ID;
+  Block: TImage;
+  ParentID: Integer;
+begin
+  ParentID := CurrBlockID;
+  PrepareArrToShift(ParentID, ArrToShift);
+  CorrectBlock(Block, NT, ParentID);
+
+  ShiftBlocks(Block.Tag, ArrToShift);
+
+
+  // // Все для сдвига вниз
+  // ConditionForShift := (MaxLen < GetMaxLengthOfBranch(ID));
+  //
+  // NodeParentType := GetNodeType(GetNodeParentID(IDOfNewBlock));
+  // NodeParentID := GetNodeParentID(IDOfNewBlock);
+  //
+  // if ConditionForShift then
+  // begin
+  // IHeight := GetMaxLengthOfBranch(ID) - MaxLen;
+  // while NodeParentID <> 0 do
+  // begin
+  //
+  // Parent := GetBlock(NodeParentID);
+  // Parent.Height := Parent.Height + IHeight;
+  // if (GetNodeType(NodeParentID) = ntWhile) or
+  // (GetNodeType(NodeParentID) = ntRepeat) then
+  // Parent.Picture.Bitmap.Height := Parent.Height;
+  // NodeParentID := GetNodeParentID(NodeParentID);
+  // end;
+  // Arr := GetArrOfAllNextElementsInd(IDOfNewBlock);
+  // for I := Low(Arr) to High(Arr) do
+  // frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
+  // end
+  // else if ((NodeParentType = ntWhile) or (NodeParentType = ntRepeat)) and
+  // ((CurrNodeType <> ntHead) or ((NT <> ntProcess) and (NT <> ntHead))) then
+  // begin
+  // repeat
+  // Parent := GetBlock(NodeParentID);
+  // Parent.Height := Parent.Height + IHeight;
+  // Parent.Picture.Bitmap.Height := Parent.Height;
+  // Arr := GetArrOfNextElementsInd(NodeParentID);
+  // for I := Low(Arr) to High(Arr) do
+  // frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
+  //
+  // NodeParentID := GetNodeParentID(NodeParentID);
+  // NodeParentType := GetNodeType(NodeParentID);
+  // until (NodeParentType <> ntWhile) and (NodeParentType <> ntRepeat);
+  // end
+  // else if NodeParentType = ntIF then
+  // begin
+  // NodeParentID := IDOfNewBlock;
+  // repeat
+  // Arr := GetArrOfNextElementsInd(NodeParentID);
+  // for I := Low(Arr) to High(Arr) do
+  // frmMain.Diagram[Arr[I]].Top := frmMain.Diagram[Arr[I]].Top + IHeight;
+  // NodeParentType := GetNodeType(NodeParentID);
+  // NodeParentID := GetNodeParentID(NodeParentID);
+  // until (NodeParentType <> ntIF) or (GetNodeParentID(NodeParentID) = 0);
+  // end;
 
 end;
 
@@ -554,7 +630,7 @@ begin
   CreateBlock(frmMain.Diagram[0], ntHead);
   with frmMain.Diagram[0] do
   begin
-    Left := StdLeft;
+    left := StdLeft;
     Top := StdTop;
     Height := StdHeight;
     Width := StdWidth;

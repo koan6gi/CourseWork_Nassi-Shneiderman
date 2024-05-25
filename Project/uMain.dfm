@@ -56,6 +56,10 @@ object frmMain: TfrmMain
     Top = 33
     Width = 916
     Height = 486
+    HorzScrollBar.Smooth = True
+    HorzScrollBar.Tracking = True
+    VertScrollBar.Smooth = True
+    VertScrollBar.Tracking = True
     Align = alClient
     TabOrder = 1
     OnMouseWheelDown = ScrollBoxMainMouseWheelDown
