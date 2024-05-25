@@ -76,11 +76,15 @@ type
   end;
 
 const
+  StdTextIndent = 10;
   StdWidthCycleBoard = 25;
   StdHeightCycleCaption = 50;
   StdWidth: Integer = 100;
   StdIfWidth = 200; // StdWidth * 2
   StdHeight = 50;
+
+  StdLeft = 100;
+  StdTop = 10;
 
 var
   frmMain: TfrmMain;
@@ -101,12 +105,16 @@ const
     '¬ведите условие выхода из цикла');
 
 var
-  StdLeft: Integer = 100;
-  StdTop: Integer = 10;
+
   CurrBlockID: Integer = 0;
 
 Type
   TPaintBlock = procedure(var Block: TImage);
+
+function GetCaptionWidth(const Caption: TDataString): Integer;
+begin
+  result := frmMain.Diagram[0].Canvas.TextWidth(String(Caption));
+end;
 
 function GetCycleBlockCaptionHeight(const ID: Integer): Integer;
 begin
@@ -117,11 +125,16 @@ begin
 end;
 
 procedure PaintProcessBlock(var Block: TImage);
+var Caption: TDataString;
 begin
+  Caption := GetNodeCaption(Block.Tag);
   with Block, Picture.Bitmap do
   begin
     Canvas.Pen.Color := clBlack;
     Block.Canvas.Rectangle(0, 0, Width, Height);
+
+    Block.Canvas.TextOut((Width - Canvas.TextWidth(String(Caption))) div 2,
+      (Height - Canvas.TextHeight(String(Caption))) div 2, String(Caption));
   end;
 end;
 
@@ -571,11 +584,21 @@ begin
   ShiftBlocks(IDOfNewBlock, ArrToShift);
 end;
 
-procedure ChangeBlockInArray(ID: Integer; Info: TDataString);
-// var
-// i: Integer;
-begin
+procedure AllocateBlock(var Block: TImage); forward;
 
+procedure ChangeBlockInArray(ID: Integer; Info: TDataString);
+var
+  NewWidth: Integer;
+  Block: TImage;
+begin
+  SetNodeCaption(ID, Info);
+  NewWidth := GetCaptionWidth(Info) + 2 * StdTextIndent;
+  if NewWidth > GetBlockWidth(ID) then
+  begin
+    CorrectDiagramWidth(ID,NewWidth);
+  end;
+  Block := GetBlock(ID);
+  AllocateBlock(Block);
 end;
 
 procedure DrawDiagram();
@@ -598,7 +621,6 @@ begin
   InsertBlockInArray(CurrBlockID, NT,
     TDataString(frmEditInfo.LabeledEditMain.Text));
 
-  // frmMain.BlockClick(GetBlock(CurrBlockID));
   frmMain.BlockClick(GetBlock(GetNodeMaxID()));
 end;
 
@@ -687,9 +709,11 @@ end;
 
 procedure TfrmMain.actDiagramEditBlockCaptionExecute(Sender: TObject);
 begin
-  frmEditInfo.LabeledEditMain.Text := '';
+  frmEditInfo.LabeledEditMain.Text := String(GetNodeCaption(CurrBlockID));
   if frmEditInfo.ShowModal <> mrOK then
     Exit;
+  ChangeBlockInArray(CurrBlockID,
+    TDataString(frmEditInfo.LabeledEditMain.Text));
 end;
 
 procedure TfrmMain.ActionListMainUpdate(Action: TBasicAction;

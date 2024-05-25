@@ -83,6 +83,8 @@ function GetArrOfLen_ID(const ID: Integer): TArrOfLen_ID;
 
 procedure CorrectDiagramWidth(const ID, NewBlockWidth: Integer);
 
+procedure SetNodeCaption(const ID: Integer; const caption: TDataString);
+
 implementation
 
 uses uMain;
@@ -532,11 +534,6 @@ begin
 
     next := temp;
   end;
-end;
-
-procedure ChangeBlockCaption(const ID: Integer; const Info: TDataString);
-begin
-  SetNodeCaption(ID, Info);
 end;
 
 procedure CorrectDiagramWidth(const ID, NewBlockWidth: Integer);

@@ -14,6 +14,7 @@ type
     btnCancel: TButton;
     procedure btnOKClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
   private
     { Private declarations }
   public
@@ -35,6 +36,11 @@ end;
 procedure TfrmEditInfo.btnOKClick(Sender: TObject);
 begin
   ModalResult := mrOK;
+end;
+
+procedure TfrmEditInfo.FormShow(Sender: TObject);
+begin
+  LabeledEditMain.SetFocus;
 end;
 
 end.

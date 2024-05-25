@@ -13,6 +13,7 @@ object frmEditInfo: TfrmEditInfo
   Font.Name = 'Segoe UI'
   Font.Style = []
   Position = poDesktopCenter
+  OnShow = FormShow
   TextHeight = 15
   object LabeledEditMain: TLabeledEdit
     Left = 40
