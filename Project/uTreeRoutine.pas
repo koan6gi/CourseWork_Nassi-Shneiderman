@@ -12,11 +12,12 @@ Type
   TData = record
     ID: Integer;
     nodeType: TNodeType;
+    caption: TDataString;
     case TNodeType of
       ntHead:
         (maxID: Integer);
-      ntProcess:
-        (caption: TDataString);
+      ntProcess, ntWhile, ntRepeat, ntIF:
+        (PotentialDiagramWidth: Integer);
   end;
 
   TIfBlock = record
@@ -57,9 +58,13 @@ Type
 var
   TreeDiagram: PAdrOfNode;
 
+function GetPotentialDiagramWidth(const ID, BlockWidth: Integer): Integer;
+
 procedure InsertBlockInTree(ID: Integer; NT: TNodeType; Info: TDataString);
 
 function GetNodeType(const ID: Integer): TNodeType;
+
+function GetNodeLastID(): Integer;
 
 function GetNodeCaption(const ID: Integer): TDataString;
 
@@ -67,13 +72,7 @@ function GetNodeMaxID(): Integer;
 
 procedure IncNodeMaxID();
 
-function GetArrOfAllNextElementsID(const ID: Integer): TArrOfInd;
-
-function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
-
 function GetNodeParentID(const ID: Integer): Integer;
-
-function GetArrOfBranches(): TArrOfArrInd;
 
 function IsNodeHaveKid(const ID: Integer): Boolean;
 
@@ -84,6 +83,12 @@ function GetArrOfLen_ID(const ID: Integer): TArrOfLen_ID;
 procedure CorrectDiagramWidth(const ID, NewBlockWidth: Integer);
 
 procedure SetNodeCaption(const ID: Integer; const caption: TDataString);
+
+procedure SetNodePotentialDiagramWidth(const ID, BlockWidth: Integer);
+
+function GetNodePotentialDiagramWidth(const ID: Integer): Integer;
+
+function GetMaxPotentialDiagramWidth(): Integer;
 
 implementation
 
@@ -127,6 +132,51 @@ begin
     result := TreeDiagram
   else
     result := gn(TreeDiagram);
+end;
+
+function GetMaxPotentialDiagramWidth(): Integer;
+
+  procedure gmp(Tree: PAdrOfNode);
+  begin
+    while (Tree <> nil) do
+    begin
+      if (Tree.data.nodeType <> ntHead) and
+        (Tree.data.PotentialDiagramWidth > result) then
+        result := Tree.data.PotentialDiagramWidth;
+
+      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
+      then
+      begin
+        gmp(Tree^.subNode.cycleBlock.cycleBranch);
+      end
+      else if (Tree^.data.nodeType = ntIF) then
+      begin
+        gmp(Tree^.subNode.ifBlock.trueBranch);
+        gmp(Tree^.subNode.ifBlock.falseBranch);
+      end;
+      Tree := Tree^.next;
+    end;
+  end;
+
+begin
+  result := StdWidth;
+  gmp(TreeDiagram);
+end;
+
+function GetNodePotentialDiagramWidth(const ID: Integer): Integer;
+var
+  Node: PAdrOfNode;
+begin
+  Node := GetNode(ID);
+  result := 0;
+  if Node <> nil then
+    result := Node.data.PotentialDiagramWidth;
+end;
+
+procedure SetNodePotentialDiagramWidth(const ID, BlockWidth: Integer);
+begin
+  GetNode(ID).data.PotentialDiagramWidth := GetPotentialDiagramWidth(ID,
+    BlockWidth);
 end;
 
 function GetNodeHead(const ID: Integer): PAdrOfNode;
@@ -265,6 +315,16 @@ begin
   result := GetNodeInfo(ID).caption;
 end;
 
+function GetNodeLastID(): Integer;
+var
+  temp: PAdrOfNode;
+begin
+  temp := TreeDiagram;
+  while temp.next <> nil do
+    temp := temp.next;
+  result := temp.data.ID;
+end;
+
 procedure SetNodeCaption(const ID: Integer; const caption: TDataString);
 begin
   GetNode(ID)^.data.caption := caption;
@@ -299,47 +359,47 @@ begin
     Arr[I] := 0;
 end;
 
-function GetArrOfBranches(): TArrOfArrInd;
-var
-  Arr: TArrOfArrInd;
-  procedure gab(Tree: PAdrOfNode);
-  var
-    I: Integer;
-    TempArr, ArrForFalseBranch: TArrOfArrInd;
-  begin
-
-    while (Tree <> nil) do
-    begin
-      for I := Low(Arr) to High(Arr) do
-        Insert(Tree.data.ID, Arr[I], Length(Arr[I]));
-
-      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
-      then
-      begin
-        gab(Tree^.subNode.cycleBlock.cycleBranch);
-      end
-      else if (Tree^.data.nodeType = ntIF) then
-      begin
-        ArrForFalseBranch := Copy(Arr, 0, Length(Arr));
-        gab(Tree^.subNode.ifBlock.trueBranch);
-        TempArr := Arr;
-        Arr := ArrForFalseBranch;
-        gab(Tree^.subNode.ifBlock.falseBranch);
-        Insert(TempArr, Arr, 0);
-        SetLength(ArrForFalseBranch, 0);
-        SetLength(TempArr, 0);
-      end;
-
-      Tree := Tree^.next;
-    end;
-  end;
-
-begin
-  SetLength(Arr, 1);
-  gab(TreeDiagram);
-  result := Copy(Arr, 0, Length(Arr));
-  SetLength(Arr, 0);
-end;
+// function GetArrOfBranches(): TArrOfArrInd;
+// var
+// Arr: TArrOfArrInd;
+// procedure gab(Tree: PAdrOfNode);
+// var
+// I: Integer;
+// TempArr, ArrForFalseBranch: TArrOfArrInd;
+// begin
+//
+// while (Tree <> nil) do
+// begin
+// for I := Low(Arr) to High(Arr) do
+// Insert(Tree.data.ID, Arr[I], Length(Arr[I]));
+//
+// if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
+// then
+// begin
+// gab(Tree^.subNode.cycleBlock.cycleBranch);
+// end
+// else if (Tree^.data.nodeType = ntIF) then
+// begin
+// ArrForFalseBranch := Copy(Arr, 0, Length(Arr));
+// gab(Tree^.subNode.ifBlock.trueBranch);
+// TempArr := Arr;
+// Arr := ArrForFalseBranch;
+// gab(Tree^.subNode.ifBlock.falseBranch);
+// Insert(TempArr, Arr, 0);
+// SetLength(ArrForFalseBranch, 0);
+// SetLength(TempArr, 0);
+// end;
+//
+// Tree := Tree^.next;
+// end;
+// end;
+//
+// begin
+// SetLength(Arr, 1);
+// gab(TreeDiagram);
+// result := Copy(Arr, 0, Length(Arr));
+// SetLength(Arr, 0);
+// end;
 
 function GetBranchLength(Tree: PAdrOfNode): Integer;
 var
@@ -410,38 +470,38 @@ begin
   end;
 end;
 
-function GetArrOfAllNextElementsID(const ID: Integer): TArrOfInd;
-var
-  Arr: TArrOfInd;
-  I, tempID: Integer;
-  Node, NodeParent: PAdrOfNode;
-
-begin
-  I := 0;
-  SetLength(Arr, 0);
-  Node := GetNode(ID);
-  if Node <> nil then
-    MakeArr(Node^.next, Arr, I);
-
-  tempID := ID;
-
-  while tempID <> 0 do
-  begin
-    NodeParent := GetNodeParent(tempID);
-    tempID := NodeParent.data.ID;
-    if (NodeParent <> nil) and (NodeParent.data.ID <> 0) then
-      MakeArr(NodeParent^.next, Arr, I);
-  end;
-
-  result := Copy(Arr, 0, Length(Arr));
-
-  for I := Low(result) + 1 to High(result) do
-    if result[I] = 0 then
-    begin
-      SetLength(result, I);
-      break;
-    end;
-end;
+// function GetArrOfAllNextElementsID(const ID: Integer): TArrOfInd;
+// var
+// Arr: TArrOfInd;
+// I, tempID: Integer;
+// Node, NodeParent: PAdrOfNode;
+//
+// begin
+// I := 0;
+// SetLength(Arr, 0);
+// Node := GetNode(ID);
+// if Node <> nil then
+// MakeArr(Node^.next, Arr, I);
+//
+// tempID := ID;
+//
+// while tempID <> 0 do
+// begin
+// NodeParent := GetNodeParent(tempID);
+// tempID := NodeParent.data.ID;
+// if (NodeParent <> nil) and (NodeParent.data.ID <> 0) then
+// MakeArr(NodeParent^.next, Arr, I);
+// end;
+//
+// result := Copy(Arr, 0, Length(Arr));
+//
+// for I := Low(result) + 1 to High(result) do
+// if result[I] = 0 then
+// begin
+// SetLength(result, I);
+// break;
+// end;
+// end;
 
 function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
 var
@@ -491,7 +551,7 @@ begin
   Head := GetNodeHead(ID);
   while Flag do
   begin
-    if I > High(result) then
+    if I > High(result) - 1 then
       Add10El(result);
     result[I].Length := GetBranchLength(Head);
     result[I].IDs := GetArrOfNextElementsID(Node.data.ID);
@@ -528,7 +588,7 @@ begin
     IncNodeMaxID();
     data.ID := GetNodeMaxID();
     nodeType := NT;
-
+    PotentialDiagramWidth := 0;
     if Assigned(InsertBlockHeadInTree[NT]) then
       InsertBlockHeadInTree[NT](tempNode);
 
@@ -536,11 +596,31 @@ begin
   end;
 end;
 
-procedure CorrectDiagramWidth(const ID, NewBlockWidth: Integer);
+function GetPotentialDiagramWidth(const ID, BlockWidth: Integer): Integer;
 var
-  NewWidth, CurrID: Integer;
+  CurrID: Integer;
   Parent: PAdrOfNode;
+begin
+  CurrID := ID;
+  result := BlockWidth;
+  while CurrID <> 0 do
+  begin
+    Parent := GetNodeParent(CurrID);
+    case Parent.data.nodeType of
+      ntIF:
+        begin
+          result := result * 2;
+        end;
+      ntWhile, ntRepeat:
+        begin
+          result := result + StdWidthCycleBoard;
+        end;
+    end;
+    CurrID := Parent.data.ID;
+  end;
+end;
 
+procedure CorrectDiagramWidth(const ID, NewBlockWidth: Integer);
   procedure cdw(Tree: PAdrOfNode; const NewWidth, NewLeft: Integer);
   var
     tempNode: PAdrOfNode;
@@ -576,26 +656,7 @@ var
   end;
 
 begin
-  CurrID := ID;
-  NewWidth := NewBlockWidth;
-  while CurrID <> 0 do
-  begin
-    Parent := GetNodeParent(CurrID);
-    case Parent.data.nodeType of
-      ntIF:
-        begin
-          NewWidth := NewWidth * 2;
-        end;
-      ntWhile, ntRepeat:
-        begin
-          NewWidth := NewWidth + StdWidthCycleBoard;
-        end;
-    end;
-    CurrID := Parent.data.ID;
-  end;
-
-  cdw(TreeDiagram, NewWidth, 0);
-
+  cdw(TreeDiagram, GetPotentialDiagramWidth(ID, NewBlockWidth), 0);
 end;
 
 procedure CreateHead(var Tree: PAdrOfNode);

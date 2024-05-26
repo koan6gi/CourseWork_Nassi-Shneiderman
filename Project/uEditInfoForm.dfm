@@ -4,8 +4,8 @@ object frmEditInfo: TfrmEditInfo
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'frmEditInfo'
-  ClientHeight = 239
-  ClientWidth = 482
+  ClientHeight = 230
+  ClientWidth = 476
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText

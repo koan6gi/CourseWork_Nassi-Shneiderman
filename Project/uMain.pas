@@ -70,9 +70,10 @@ type
     procedure ScrollBoxMainMouseWheelUp(Sender: TObject; Shift: TShiftState;
       MousePos: TPoint; var Handled: Boolean);
   private
-
-  public
     Diagram: array of TImage;
+    CurrBlockID: Integer;
+  public
+
   end;
 
 const
@@ -104,16 +105,36 @@ const
     '¬ведите условие', '¬ведите условие входа в цикл',
     '¬ведите условие выхода из цикла');
 
-var
-
-  CurrBlockID: Integer = 0;
-
 Type
   TPaintBlock = procedure(var Block: TImage);
 
-function GetCaptionWidth(const Caption: TDataString): Integer;
+function GetBlock(const ID: Integer): TImage; forward;
+
+function GetDiagramWidth(): Integer;
 begin
-  result := frmMain.Diagram[0].Canvas.TextWidth(String(Caption));
+  result := GetBlockWidth(0);
+end;
+
+function GetDiagramHeight(): Integer;
+var
+  ID: Integer;
+  Block: TImage;
+begin
+  ID := GetNodeLastID;
+  Block := GetBlock(ID);
+  result := Block.Top + Block.Height;
+end;
+
+function GetCaptionWidth(const Caption: TDataString;
+  const NT: TNodeType): Integer;
+begin
+  result := frmMain.Diagram[0].Canvas.TextWidth(String(Caption)) + 2 *
+    StdTextIndent;
+  if NT = ntHead then
+    result := StdWidth
+  else if NT = ntIF then
+    // result := ;
+
 end;
 
 function GetCycleBlockCaptionHeight(const ID: Integer): Integer;
@@ -125,7 +146,8 @@ begin
 end;
 
 procedure PaintProcessBlock(var Block: TImage);
-var Caption: TDataString;
+var
+  Caption: TDataString;
 begin
   Caption := GetNodeCaption(Block.Tag);
   with Block, Picture.Bitmap do
@@ -153,22 +175,36 @@ begin
 end;
 
 procedure PaintWhileBlock(var Block: TImage);
+var
+  Caption: TDataString;
 begin
+  Caption := GetNodeCaption(Block.Tag);
   with Block, Picture.Bitmap do
   begin
     Block.Canvas.Rectangle(0, 0, Block.Width, Height);
     Block.Canvas.Rectangle(StdWidthCycleBoard,
       GetCycleBlockCaptionHeight(Block.Tag), Width, Height);
+
+    Block.Canvas.TextOut((Width - Canvas.TextWidth(String(Caption))) div 2,
+      (StdHeightCycleCaption - Canvas.TextHeight(String(Caption))) div 2,
+      String(Caption));
   end;
 end;
 
 procedure PaintRepeatBlock(var Block: TImage);
+var
+  Caption: TDataString;
 begin
+  Caption := GetNodeCaption(Block.Tag);
   with Block, Picture.Bitmap do
   begin
     Block.Canvas.Rectangle(0, 0, Width, Height);
     Block.Canvas.Rectangle(StdWidthCycleBoard,
       Height - GetCycleBlockCaptionHeight(Block.Tag), Width, 0);
+
+    Block.Canvas.TextOut((Width - Canvas.TextWidth(String(Caption))) div 2,
+      Height - StdHeightCycleCaption + (StdHeightCycleCaption -
+      Canvas.TextHeight(String(Caption))) div 2, String(Caption));
   end;
 end;
 
@@ -282,25 +318,25 @@ begin
   end;
 end;
 
-function GetBlockInd(const ID: Integer): Integer;
-var
-  I: Integer;
-begin
-  result := 0;
-  for I := Low(frmMain.Diagram) to High(frmMain.Diagram) do
-    if frmMain.Diagram[I].Tag = ID then
-    begin
-      result := I;
-      break;
-    end;
-end;
+// function GetBlockInd(const ID: Integer): Integer;
+// var
+// I: Integer;
+// begin
+// result := 0;
+// for I := Low(frmMain.Diagram) to High(frmMain.Diagram) do
+// if frmMain.Diagram[I].Tag = ID then
+// begin
+// result := I;
+// break;
+// end;
+// end;
 
 procedure SetTextSettings(Block: TImage);
 begin
   with Block, Canvas, Font do
   begin
     Font.Name := 'Times New Roman';
-    Font.Size := 12;
+    Font.Size := 11;
   end;
 end;
 
@@ -344,27 +380,27 @@ begin
 
 end;
 
-function GetArrOfAllNextElementsInd(const ID: Integer): TArrOfInd;
-var
-  Arr: TArrOfInd;
-  I: Integer;
-begin
-  Arr := GetArrOfAllNextElementsID(ID);
-  for I := Low(Arr) to High(Arr) do
-    Arr[I] := GetBlockInd(Arr[I]);
-  result := Copy(Arr, 0, Length(Arr));
-end;
+// function GetArrOfAllNextElementsInd(const ID: Integer): TArrOfInd;
+// var
+// Arr: TArrOfInd;
+// I: Integer;
+// begin
+// Arr := GetArrOfAllNextElementsID(ID);
+// for I := Low(Arr) to High(Arr) do
+// Arr[I] := GetBlockInd(Arr[I]);
+// result := Copy(Arr, 0, Length(Arr));
+// end;
 
-function GetArrOfNextElementsInd(const ID: Integer): TArrOfInd;
-var
-  Arr: TArrOfInd;
-  I: Integer;
-begin
-  Arr := GetArrOfNextElementsID(ID);
-  for I := Low(Arr) to High(Arr) do
-    Arr[I] := GetBlockInd(Arr[I]);
-  result := Copy(Arr, 0, Length(Arr));
-end;
+// function GetArrOfNextElementsInd(const ID: Integer): TArrOfInd;
+// var
+// Arr: TArrOfInd;
+// I: Integer;
+// begin
+// Arr := GetArrOfNextElementsID(ID);
+// for I := Low(Arr) to High(Arr) do
+// Arr[I] := GetBlockInd(Arr[I]);
+// result := Copy(Arr, 0, Length(Arr));
+// end;
 
 function GetBlockHeight(const ID: Integer): Integer;
 var
@@ -383,31 +419,31 @@ begin
 
 end;
 
-function GetLengthOfBranch(const A: TArrOfInd): Integer;
-var
-  I: Integer;
-begin
-  result := 0;
-  for I := Low(A) to High(A) do
-    Inc(result, GetBlockHeight(A[I]));
-end;
+// function GetLengthOfBranch(const A: TArrOfInd): Integer;
+// var
+// I: Integer;
+// begin
+// result := 0;
+// for I := Low(A) to High(A) do
+// Inc(result, GetBlockHeight(A[I]));
+// end;
 
-function GetMaxLengthOfBranch(const ID: Integer): Integer;
-var
-  A: TArrOfArrInd;
-  I, len: Integer;
-begin
-  result := 0;
-
-  A := GetArrOfBranches( { ID } );
-
-  for I := Low(A) to High(A) do
-  begin
-    len := GetLengthOfBranch(A[I]);
-    if len > result then
-      result := len
-  end;
-end;
+// function GetMaxLengthOfBranch(const ID: Integer): Integer;
+// var
+// A: TArrOfArrInd;
+// I, len: Integer;
+// begin
+// result := 0;
+//
+// A := GetArrOfBranches( { ID } );
+//
+// for I := Low(A) to High(A) do
+// begin
+// len := GetLengthOfBranch(A[I]);
+// if len > result then
+// result := len
+// end;
+// end;
 
 procedure CorrectBlock(var Block: TImage; const NT: TNodeType;
   const ParentID: Integer);
@@ -431,8 +467,11 @@ begin
     Block.Top := ParentTop + ParentHeight;
   Block.Height := StdHeight;
   Block.Picture.Bitmap.Height := Block.Height;
-  Block.Width := ParentWidth;
-  Block.Picture.Bitmap.Width := ParentWidth;
+  if ParentWidth >= StdWidth then
+    Block.Width := ParentWidth
+  else
+    Block.Width := StdWidth;
+  Block.Picture.Bitmap.Width := Block.Width;
 
   Insert(Block, frmMain.Diagram, Length(frmMain.Diagram));
   case NT of
@@ -565,18 +604,18 @@ begin
         AddBlockTop(ArrToShift[I].IDs[j], ShiftLen);
       end;
       if (ArrToShift[I].ParentID <> 0) and (ArrToShift[I + 1].Length <> 0) then
-        AddBlockHeight(ArrToShift[I].ParentID, ShiftLen);
+        AddBlockHeight(ArrToShift[I].ParentID, ArrToShift[I + 1].Length);
     end;
   end;
 end;
 
-procedure InsertBlockInArray(ID: Integer; NT: TNodeType; Info: TDataString);
+procedure InsertBlockInArray(const ID: Integer; const NT: TNodeType);
 var
   ArrToShift: TArrOfLen_ID;
   Block: TImage;
   ParentID, IDOfNewBlock: Integer;
 begin
-  ParentID := CurrBlockID;
+  ParentID := ID;
   PrepareArrToShift(ParentID, ArrToShift);
   CorrectBlock(Block, NT, ParentID);
   IDOfNewBlock := Block.Tag;
@@ -592,11 +631,17 @@ var
   Block: TImage;
 begin
   SetNodeCaption(ID, Info);
-  NewWidth := GetCaptionWidth(Info) + 2 * StdTextIndent;
+  NewWidth := GetCaptionWidth(Info, GetNodeType(ID));
+  SetNodePotentialDiagramWidth(ID, NewWidth);
   if NewWidth > GetBlockWidth(ID) then
   begin
-    CorrectDiagramWidth(ID,NewWidth);
+    CorrectDiagramWidth(ID, NewWidth);
+  end
+  else
+  begin
+    CorrectDiagramWidth(0, GetMaxPotentialDiagramWidth());
   end;
+  SetNodePotentialDiagramWidth(ID, NewWidth);
   Block := GetBlock(ID);
   AllocateBlock(Block);
 end;
@@ -615,11 +660,10 @@ end;
 
 procedure InsertBlockInDiagram(const NT: TNodeType);
 begin
-  InsertBlockInTree(CurrBlockID, NT,
+  InsertBlockInTree(frmMain.CurrBlockID, NT,
     TDataString(frmEditInfo.LabeledEditMain.Text));
 
-  InsertBlockInArray(CurrBlockID, NT,
-    TDataString(frmEditInfo.LabeledEditMain.Text));
+  InsertBlockInArray(frmMain.CurrBlockID, NT);
 
   frmMain.BlockClick(GetBlock(GetNodeMaxID()));
 end;
@@ -627,7 +671,7 @@ end;
 procedure AllocateBlock(var Block: TImage);
 begin
   DrawDiagram();
-  CurrBlockID := Block.Tag;
+  frmMain.CurrBlockID := Block.Tag;
   with Block do
   begin
     Canvas.Brush.Color := clYellow;
@@ -640,6 +684,7 @@ end;
 
 procedure TfrmMain.frmMainCreate(Sender: TObject);
 begin
+  CurrBlockID := 0;
   SetLength(frmMain.Diagram, 1);
   CreateBlock(frmMain.Diagram[0], ntHead);
   with frmMain.Diagram[0] do
@@ -708,12 +753,17 @@ begin
 end;
 
 procedure TfrmMain.actDiagramEditBlockCaptionExecute(Sender: TObject);
+var
+  Caption: TDataString;
+  bExit: Boolean;
 begin
-  frmEditInfo.LabeledEditMain.Text := String(GetNodeCaption(CurrBlockID));
-  if frmEditInfo.ShowModal <> mrOK then
+  SetEditCaption(GetNodeCaption(CurrBlockID));
+  bExit := frmEditInfo.ShowModal <> mrOK;
+  Caption := GetEditCaption();
+  SetEditCaption('');
+  if bExit then
     Exit;
-  ChangeBlockInArray(CurrBlockID,
-    TDataString(frmEditInfo.LabeledEditMain.Text));
+  ChangeBlockInArray(CurrBlockID, Caption);
 end;
 
 procedure TfrmMain.ActionListMainUpdate(Action: TBasicAction;
