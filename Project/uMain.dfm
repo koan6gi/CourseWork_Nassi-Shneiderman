@@ -154,6 +154,7 @@ object frmMain: TfrmMain
       Category = 'Diagram'
       Caption = #1059#1076#1072#1083#1080#1090#1100' '#1073#1083#1086#1082
       ImageIndex = 9
+      OnExecute = actDiagramDeleteBlockExecute
     end
     object actDiagramEditBlockCaption: TAction
       Category = 'Diagram'

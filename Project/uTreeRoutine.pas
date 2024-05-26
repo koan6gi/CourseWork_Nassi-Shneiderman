@@ -58,9 +58,12 @@ Type
 var
   TreeDiagram: PAdrOfNode;
 
+procedure DeleteNode(const ID: Integer);
+
 function GetPotentialDiagramWidth(const ID, BlockWidth: Integer): Integer;
 
-procedure InsertBlockInTree(ID: Integer; NT: TNodeType; Info: TDataString);
+procedure InsertNode(const ID: Integer; const NT: TNodeType;
+  const Info: TDataString);
 
 function GetNodeType(const ID: Integer): TNodeType;
 
@@ -359,48 +362,6 @@ begin
     Arr[I] := 0;
 end;
 
-// function GetArrOfBranches(): TArrOfArrInd;
-// var
-// Arr: TArrOfArrInd;
-// procedure gab(Tree: PAdrOfNode);
-// var
-// I: Integer;
-// TempArr, ArrForFalseBranch: TArrOfArrInd;
-// begin
-//
-// while (Tree <> nil) do
-// begin
-// for I := Low(Arr) to High(Arr) do
-// Insert(Tree.data.ID, Arr[I], Length(Arr[I]));
-//
-// if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
-// then
-// begin
-// gab(Tree^.subNode.cycleBlock.cycleBranch);
-// end
-// else if (Tree^.data.nodeType = ntIF) then
-// begin
-// ArrForFalseBranch := Copy(Arr, 0, Length(Arr));
-// gab(Tree^.subNode.ifBlock.trueBranch);
-// TempArr := Arr;
-// Arr := ArrForFalseBranch;
-// gab(Tree^.subNode.ifBlock.falseBranch);
-// Insert(TempArr, Arr, 0);
-// SetLength(ArrForFalseBranch, 0);
-// SetLength(TempArr, 0);
-// end;
-//
-// Tree := Tree^.next;
-// end;
-// end;
-//
-// begin
-// SetLength(Arr, 1);
-// gab(TreeDiagram);
-// result := Copy(Arr, 0, Length(Arr));
-// SetLength(Arr, 0);
-// end;
-
 function GetBranchLength(Tree: PAdrOfNode): Integer;
 var
   MaxLength, CurrLength: Integer;
@@ -469,39 +430,6 @@ begin
     Tree := Tree^.next;
   end;
 end;
-
-// function GetArrOfAllNextElementsID(const ID: Integer): TArrOfInd;
-// var
-// Arr: TArrOfInd;
-// I, tempID: Integer;
-// Node, NodeParent: PAdrOfNode;
-//
-// begin
-// I := 0;
-// SetLength(Arr, 0);
-// Node := GetNode(ID);
-// if Node <> nil then
-// MakeArr(Node^.next, Arr, I);
-//
-// tempID := ID;
-//
-// while tempID <> 0 do
-// begin
-// NodeParent := GetNodeParent(tempID);
-// tempID := NodeParent.data.ID;
-// if (NodeParent <> nil) and (NodeParent.data.ID <> 0) then
-// MakeArr(NodeParent^.next, Arr, I);
-// end;
-//
-// result := Copy(Arr, 0, Length(Arr));
-//
-// for I := Low(result) + 1 to High(result) do
-// if result[I] = 0 then
-// begin
-// SetLength(result, I);
-// break;
-// end;
-// end;
 
 function GetArrOfNextElementsID(const ID: Integer): TArrOfInd;
 var
@@ -574,7 +502,8 @@ const
     nil, InsertIfBlockHeadsInTree, InsertCycleBlockHeadInTree,
     InsertCycleBlockHeadInTree);
 
-procedure InsertBlockInTree(ID: Integer; NT: TNodeType; Info: TDataString);
+procedure InsertNode(const ID: Integer; const NT: TNodeType;
+  const Info: TDataString);
 var
   tempNode, temp: PAdrOfNode;
 begin
@@ -588,12 +517,62 @@ begin
     IncNodeMaxID();
     data.ID := GetNodeMaxID();
     nodeType := NT;
-    PotentialDiagramWidth := 0;
+    PotentialDiagramWidth := GetPotentialDiagramWidth(ID, StdWidth);
     if Assigned(InsertBlockHeadInTree[NT]) then
       InsertBlockHeadInTree[NT](tempNode);
 
     next := temp;
   end;
+end;
+
+procedure FreeDiagram(var Diagram: PAdrOfNode); forward;
+
+procedure DeleteNode(const ID: Integer);
+var
+  PrevNode, CurrNode, NextNode: PAdrOfNode;
+  function FindNode(Tree: PAdrOfNode): PAdrOfNode;
+  begin
+    result := nil;
+    while Tree.next <> nil do
+    begin
+      if Tree.next.data.ID = ID then
+        result := Tree;
+
+      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
+      then
+      begin
+        result := FindNode(Tree^.subNode.cycleBlock.cycleBranch);
+      end
+      else if (Tree^.data.nodeType = ntIF) then
+      begin
+        result := FindNode(Tree^.subNode.ifBlock.trueBranch);
+        if result = nil then
+          result := FindNode(Tree^.subNode.ifBlock.falseBranch);
+      end;
+
+      if result <> nil then
+        Exit;
+
+      Tree := Tree.next;
+    end;
+  end;
+
+begin
+  PrevNode := FindNode(TreeDiagram);
+  CurrNode := PrevNode.next;
+  NextNode := CurrNode.next;
+  PrevNode.next := NextNode;
+  if (CurrNode.data.nodeType = ntWhile) or (CurrNode.data.nodeType = ntRepeat)
+  then
+  begin
+    FreeDiagram(CurrNode.subNode.cycleBlock.cycleBranch);
+  end
+  else if CurrNode.data.nodeType = ntIF then
+  begin
+    FreeDiagram(CurrNode.subNode.ifBlock.trueBranch);
+    FreeDiagram(CurrNode.subNode.ifBlock.falseBranch);
+  end;
+  Dispose(CurrNode);
 end;
 
 function GetPotentialDiagramWidth(const ID, BlockWidth: Integer): Integer;

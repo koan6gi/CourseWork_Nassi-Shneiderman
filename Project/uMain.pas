@@ -69,6 +69,7 @@ type
       MousePos: TPoint; var Handled: Boolean);
     procedure ScrollBoxMainMouseWheelUp(Sender: TObject; Shift: TShiftState;
       MousePos: TPoint; var Handled: Boolean);
+    procedure actDiagramDeleteBlockExecute(Sender: TObject);
   private
     Diagram: array of TImage;
     CurrBlockID: Integer;
@@ -249,6 +250,31 @@ begin
   end;
 end;
 
+function GetBlockInd(const ID: Integer): Integer;
+var
+  left, right, mid: Integer;
+  flag: Boolean;
+begin
+  result := 0;
+  flag := true;
+  left := low(frmMain.Diagram);
+  right := high(frmMain.Diagram);
+
+  while (left <= right) and (flag) do
+  begin
+    mid := (left + right) div 2;
+    if ID = frmMain.Diagram[mid].Tag then
+    begin
+      result := mid;
+      flag := false;
+    end
+    else if ID < frmMain.Diagram[mid].Tag then
+      right := mid - 1
+    else
+      left := mid + 1;
+  end;
+end;
+
 procedure AddBlockTop(const ID, SH: Integer);
 var
   Block: TImage;
@@ -318,19 +344,6 @@ begin
   end;
 end;
 
-// function GetBlockInd(const ID: Integer): Integer;
-// var
-// I: Integer;
-// begin
-// result := 0;
-// for I := Low(frmMain.Diagram) to High(frmMain.Diagram) do
-// if frmMain.Diagram[I].Tag = ID then
-// begin
-// result := I;
-// break;
-// end;
-// end;
-
 procedure SetTextSettings(Block: TImage);
 begin
   with Block, Canvas, Font do
@@ -380,35 +393,13 @@ begin
 
 end;
 
-// function GetArrOfAllNextElementsInd(const ID: Integer): TArrOfInd;
-// var
-// Arr: TArrOfInd;
-// I: Integer;
-// begin
-// Arr := GetArrOfAllNextElementsID(ID);
-// for I := Low(Arr) to High(Arr) do
-// Arr[I] := GetBlockInd(Arr[I]);
-// result := Copy(Arr, 0, Length(Arr));
-// end;
-
-// function GetArrOfNextElementsInd(const ID: Integer): TArrOfInd;
-// var
-// Arr: TArrOfInd;
-// I: Integer;
-// begin
-// Arr := GetArrOfNextElementsID(ID);
-// for I := Low(Arr) to High(Arr) do
-// Arr[I] := GetBlockInd(Arr[I]);
-// result := Copy(Arr, 0, Length(Arr));
-// end;
-
 function GetBlockHeight(const ID: Integer): Integer;
 var
   Block: TImage;
 begin
   Block := GetBlock(ID);
   result := 0;
-  if Block <> nil then
+  if (Block <> nil) and (Block.Height <> 0) then
   begin
     if (GetNodeType(ID) = ntWhile) or (GetNodeType(ID) = ntRepeat) then
       result := GetCycleBlockCaptionHeight(ID)
@@ -416,34 +407,16 @@ begin
       (IsNodeHaveKid(ID) and (GetBlock(GetNodeKidID(ID)) <> nil))) then
       result := Block.Picture.Bitmap.Height
   end;
-
 end;
 
-// function GetLengthOfBranch(const A: TArrOfInd): Integer;
-// var
-// I: Integer;
-// begin
-// result := 0;
-// for I := Low(A) to High(A) do
-// Inc(result, GetBlockHeight(A[I]));
-// end;
-
-// function GetMaxLengthOfBranch(const ID: Integer): Integer;
-// var
-// A: TArrOfArrInd;
-// I, len: Integer;
-// begin
-// result := 0;
-//
-// A := GetArrOfBranches( { ID } );
-//
-// for I := Low(A) to High(A) do
-// begin
-// len := GetLengthOfBranch(A[I]);
-// if len > result then
-// result := len
-// end;
-// end;
+procedure SetBlockHeight(const ID, NewHeight: Integer);
+var
+  Block: TImage;
+begin
+  Block := GetBlock(ID);
+  Block.Height := NewHeight;
+  Block.Picture.Bitmap.Height := NewHeight;
+end;
 
 procedure CorrectBlock(var Block: TImage; const NT: TNodeType;
   const ParentID: Integer);
@@ -623,21 +596,49 @@ begin
   ShiftBlocks(IDOfNewBlock, ArrToShift);
 end;
 
+procedure DeleteBlockInArray(const ID: Integer);
+var
+  I: Integer;
+begin
+  I := GetBlockInd(ID);
+  frmMain.Diagram[I].Free;
+  Delete(frmMain.Diagram, I, 1);
+end;
+
+procedure ChangeBlockInArray(ID: Integer; Info: TDataString); forward;
+
+procedure DeleteBlock(const ID: Integer);
+var
+  ArrToShift: TArrOfLen_ID;
+begin
+  PrepareArrToShift(ID, ArrToShift);
+
+  SetBlockHeight(ID, 0);
+  ChangeBlockInArray(ID, '');
+  ShiftBlocks(ID, ArrToShift);
+  DeleteBlockInArray(ID);
+  DeleteNode(ID);
+  frmMain.CurrBlockID := 0;
+end;
+
 procedure AllocateBlock(var Block: TImage); forward;
 
 procedure ChangeBlockInArray(ID: Integer; Info: TDataString);
 var
-  NewWidth: Integer;
+  NewWidth, BlockWidth: Integer;
   Block: TImage;
 begin
   SetNodeCaption(ID, Info);
   NewWidth := GetCaptionWidth(Info, GetNodeType(ID));
+  if NewWidth < StdWidth then
+    NewWidth := StdWidth;
   SetNodePotentialDiagramWidth(ID, NewWidth);
-  if NewWidth > GetBlockWidth(ID) then
+  BlockWidth := GetBlockWidth(ID);
+  if NewWidth > BlockWidth then
   begin
     CorrectDiagramWidth(ID, NewWidth);
   end
-  else
+  else if NewWidth < BlockWidth then
   begin
     CorrectDiagramWidth(0, GetMaxPotentialDiagramWidth());
   end;
@@ -660,7 +661,7 @@ end;
 
 procedure InsertBlockInDiagram(const NT: TNodeType);
 begin
-  InsertBlockInTree(frmMain.CurrBlockID, NT,
+  InsertNode(frmMain.CurrBlockID, NT,
     TDataString(frmEditInfo.LabeledEditMain.Text));
 
   InsertBlockInArray(frmMain.CurrBlockID, NT);
@@ -750,6 +751,11 @@ end;
 procedure TfrmMain.actDiagramAddWhileExecute(Sender: TObject);
 begin
   InsertBlockInDiagram(ntWhile);
+end;
+
+procedure TfrmMain.actDiagramDeleteBlockExecute(Sender: TObject);
+begin
+  DeleteBlock(CurrBlockID);
 end;
 
 procedure TfrmMain.actDiagramEditBlockCaptionExecute(Sender: TObject);
