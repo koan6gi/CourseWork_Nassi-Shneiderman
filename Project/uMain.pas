@@ -460,14 +460,14 @@ begin
           Block.Width := ParentWidth;
         end;
         Block.Picture.Bitmap.Width := Block.Width;
-        Block.Height := Block.Height + StdHeight;
-        Block.Picture.Bitmap.Height := StdHeight;
+        Block.Height := Block.Height + 2 * StdHeight;
+        Block.Picture.Bitmap.Height := 2 * StdHeight;
 
         // Создание подветвей
-        KidWidth := Block.Width div 2;
+        KidWidth := Block.Width div 3;
         CreateBlock(tempHead, ntHead);
         tempHead.Tag := Block.Tag + 1;
-        tempHead.Top := Block.Top + StdHeight;
+        tempHead.Top := Block.Top + 2 * StdHeight;
         tempHead.left := ParentLeft;
         tempHead.Height := StdHeight;
         tempHead.Picture.Bitmap.Height := tempHead.Height;
@@ -477,7 +477,7 @@ begin
 
         CreateBlock(tempHead, ntHead);
         tempHead.Tag := Block.Tag + 2;
-        tempHead.Top := Block.Top + StdHeight;
+        tempHead.Top := Block.Top + 2 * StdHeight;
         tempHead.left := ParentLeft + KidWidth;
         tempHead.Height := StdHeight;
         tempHead.Picture.Bitmap.Height := tempHead.Height;
@@ -605,7 +605,33 @@ begin
   Delete(frmMain.Diagram, I, 1);
 end;
 
+procedure DeleteBlockKids(const ID: Integer);
+var
+  I: Integer;
+  A: TArrOfInd;
+begin
+  A := GetArrOfNodeKids(ID);
+  for I := Low(A) to High(A) do
+  begin
+    DeleteBlockInArray(A[I]);
+  end;
+end;
+
+procedure SetBlockKidsHeight0(const ID: Integer);
+var
+  I: Integer;
+  A: TArrOfInd;
+begin
+  A := GetArrOfNodeKids(ID);
+  for I := Low(A) to High(A) do
+  begin
+    SetBlockHeight(A[I], 0);
+  end;
+end;
+
 procedure ChangeBlockInArray(ID: Integer; Info: TDataString); forward;
+
+procedure DrawDiagram(); forward;
 
 procedure DeleteBlock(const ID: Integer);
 var
@@ -614,11 +640,16 @@ begin
   PrepareArrToShift(ID, ArrToShift);
 
   SetBlockHeight(ID, 0);
+  SetBlockKidsHeight0(ID);
   ChangeBlockInArray(ID, '');
   ShiftBlocks(ID, ArrToShift);
+
+  DeleteBlockKids(ID);
   DeleteBlockInArray(ID);
   DeleteNode(ID);
+
   frmMain.CurrBlockID := 0;
+  DrawDiagram();
 end;
 
 procedure AllocateBlock(var Block: TImage); forward;
@@ -775,8 +806,10 @@ end;
 procedure TfrmMain.ActionListMainUpdate(Action: TBasicAction;
   var Handled: Boolean);
 begin
-  actDiagramDeleteBlock.Enabled := (GetNodeType(CurrBlockID) <> ntHead);
-  actDiagramEditBlockCaption.Enabled := actDiagramDeleteBlock.Enabled;
+
+  actDiagramEditBlockCaption.Enabled := (GetNodeType(CurrBlockID) <> ntHead);
+  actDiagramDeleteBlock.Enabled := (actDiagramEditBlockCaption.Enabled) { and
+    (GetNodeHead(CurrBlockID).next.data.ID <> CurrBlockID) };
 
   actDiagramAddProcess.Enabled :=
     not((Length(Diagram) = 2) and (GetNodeType(CurrBlockID) = ntHead));

@@ -3,7 +3,7 @@ program CourseWork;
 uses
   Vcl.Forms,
   uTreeRoutine in 'uTreeRoutine.pas',
-  uMain in 'uMain.pas' {frmMain},
+  uMain in 'uMain.pas' {frmMain} ,
   uEditInfoForm in 'uEditInfoForm.pas' {frmEditInfo};
 
 {$R *.res}

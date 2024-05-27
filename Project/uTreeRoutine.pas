@@ -93,6 +93,12 @@ function GetNodePotentialDiagramWidth(const ID: Integer): Integer;
 
 function GetMaxPotentialDiagramWidth(): Integer;
 
+function GetArrOfNodeKids(const ID: Integer): TArrOfInd;
+
+function GetPrevNodeID(const ID: Integer): Integer;
+
+function GetNodeHead(const ID: Integer): PAdrOfNode;
+
 implementation
 
 uses uMain;
@@ -454,6 +460,30 @@ begin
     end;
 end;
 
+function GetArrOfNodeKids(const ID: Integer): TArrOfInd;
+var
+  Node: PAdrOfNode;
+  I: Integer;
+begin
+  I := 0;
+  Node := GetNode(ID);
+  if (Node.data.nodeType = ntWhile) or (Node.data.nodeType = ntRepeat) then
+  begin
+    MakeArr(Node.subNode.cycleBlock.cycleBranch, result, I);
+  end
+  else if (Node.data.nodeType = ntIF) then
+  begin
+    MakeArr(Node.subNode.ifBlock.trueBranch, result, I);
+    MakeArr(Node.subNode.ifBlock.falseBranch, result, I);
+  end;
+  for I := Low(result) to High(result) do
+    if result[I] = 0 then
+    begin
+      SetLength(result, I);
+      break;
+    end;
+end;
+
 procedure Add10El(var Arr: TArrOfLen_ID); overload;
 var
   I: Integer;
@@ -513,6 +543,7 @@ begin
   tempNode := tempNode^.next;
   with tempNode^, data do
   begin
+    next := temp;
     caption := Info;
     IncNodeMaxID();
     data.ID := GetNodeMaxID();
@@ -520,8 +551,6 @@ begin
     PotentialDiagramWidth := GetPotentialDiagramWidth(ID, StdWidth);
     if Assigned(InsertBlockHeadInTree[NT]) then
       InsertBlockHeadInTree[NT](tempNode);
-
-    next := temp;
   end;
 end;
 
@@ -530,13 +559,14 @@ procedure FreeDiagram(var Diagram: PAdrOfNode); forward;
 procedure DeleteNode(const ID: Integer);
 var
   PrevNode, CurrNode, NextNode: PAdrOfNode;
+  NT: TNodeType;
+  Flag: Boolean;
   function FindNode(Tree: PAdrOfNode): PAdrOfNode;
   begin
     result := nil;
-    while Tree.next <> nil do
+
+    while (Tree.next <> nil) do
     begin
-      if Tree.next.data.ID = ID then
-        result := Tree;
 
       if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
       then
@@ -550,14 +580,32 @@ var
           result := FindNode(Tree^.subNode.ifBlock.falseBranch);
       end;
 
-      if result <> nil then
+      if Tree.next.data.ID = ID then
+        result := Tree;
+      if (result <> nil) then
         Exit;
 
       Tree := Tree.next;
     end;
+    if (result = nil) then
+    begin
+      if (Tree^.data.nodeType = ntWhile) or (Tree^.data.nodeType = ntRepeat)
+      then
+      begin
+        result := FindNode(Tree^.subNode.cycleBlock.cycleBranch);
+      end
+      else if (Tree^.data.nodeType = ntIF) then
+      begin
+        result := FindNode(Tree^.subNode.ifBlock.trueBranch);
+        if result = nil then
+          result := FindNode(Tree^.subNode.ifBlock.falseBranch);
+      end;
+    end;
   end;
 
 begin
+  NT := ntHead;
+  Flag := False;
   PrevNode := FindNode(TreeDiagram);
   CurrNode := PrevNode.next;
   NextNode := CurrNode.next;
@@ -636,6 +684,22 @@ procedure CorrectDiagramWidth(const ID, NewBlockWidth: Integer);
 
 begin
   cdw(TreeDiagram, GetPotentialDiagramWidth(ID, NewBlockWidth), 0);
+end;
+
+function GetPrevNodeID(const ID: Integer): Integer;
+var
+  HeadNode: PAdrOfNode;
+begin
+  HeadNode := GetNodeHead(ID);
+  result := -1;
+  while HeadNode.next <> nil do
+  begin
+    if HeadNode.next.data.ID = ID then
+    begin
+      result := HeadNode.data.ID;
+      break;
+    end;
+  end;
 end;
 
 procedure CreateHead(var Tree: PAdrOfNode);
