@@ -99,6 +99,8 @@ function GetPrevNodeID(const ID: Integer): Integer;
 
 function GetNodeHead(const ID: Integer): PAdrOfNode;
 
+function GetCountNodeInBranch(const ID: Integer): Integer;
+
 implementation
 
 uses uMain;
@@ -522,6 +524,19 @@ begin
     Inc(I);
   end;
 
+end;
+
+function GetCountNodeInBranch(const ID: Integer): Integer;
+var
+  Node: PAdrOfNode;
+begin
+  result := 1;
+  Node := GetNodeHead(ID);
+  while Node.next <> nil do
+  begin
+    Inc(result);
+    Node := Node.next;
+  end;
 end;
 
 type

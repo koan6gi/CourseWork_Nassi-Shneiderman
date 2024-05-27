@@ -5,7 +5,8 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls, uTreeRoutine;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls,
+  uTreeRoutine;
 
 type
   TfrmEditInfo = class(TForm)
@@ -21,13 +22,19 @@ type
     { Public declarations }
   end;
 
-  procedure SetEditCaption(const S: TDataString);
-  function GetEditCaption(): TDataString;
+procedure SetEditCaption(const S: TDataString);
+function GetEditCaption(): TDataString;
+procedure SetEditLable(const S: String);
 
 var
   frmEditInfo: TfrmEditInfo;
 
 implementation
+
+procedure SetEditLable(const S: String);
+begin
+  frmEditInfo.LabeledEditMain.EditLabel.Caption := S;
+end;
 
 procedure SetEditCaption(const S: TDataString);
 begin

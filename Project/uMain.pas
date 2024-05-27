@@ -794,6 +794,7 @@ var
   Caption: TDataString;
   bExit: Boolean;
 begin
+  SetEditLable(EditInfoMessages[GetNodeType(CurrBlockID)]);
   SetEditCaption(GetNodeCaption(CurrBlockID));
   bExit := frmEditInfo.ShowModal <> mrOK;
   Caption := GetEditCaption();
@@ -808,8 +809,8 @@ procedure TfrmMain.ActionListMainUpdate(Action: TBasicAction;
 begin
 
   actDiagramEditBlockCaption.Enabled := (GetNodeType(CurrBlockID) <> ntHead);
-  actDiagramDeleteBlock.Enabled := (actDiagramEditBlockCaption.Enabled) { and
-    (GetNodeHead(CurrBlockID).next.data.ID <> CurrBlockID) };
+  actDiagramDeleteBlock.Enabled := (actDiagramEditBlockCaption.Enabled) and
+    (GetCountNodeInBranch(CurrBlockID) > 2);
 
   actDiagramAddProcess.Enabled :=
     not((Length(Diagram) = 2) and (GetNodeType(CurrBlockID) = ntHead));
