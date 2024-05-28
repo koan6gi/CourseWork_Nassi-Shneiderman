@@ -574,8 +574,6 @@ procedure FreeDiagram(var Diagram: PAdrOfNode); forward;
 procedure DeleteNode(const ID: Integer);
 var
   PrevNode, CurrNode, NextNode: PAdrOfNode;
-  NT: TNodeType;
-  Flag: Boolean;
   function FindNode(Tree: PAdrOfNode): PAdrOfNode;
   begin
     result := nil;
@@ -619,8 +617,6 @@ var
   end;
 
 begin
-  NT := ntHead;
-  Flag := False;
   PrevNode := FindNode(TreeDiagram);
   CurrNode := PrevNode.next;
   NextNode := CurrNode.next;

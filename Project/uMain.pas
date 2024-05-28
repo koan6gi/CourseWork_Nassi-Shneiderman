@@ -129,13 +129,15 @@ end;
 function GetCaptionWidth(const Caption: TDataString;
   const NT: TNodeType): Integer;
 begin
-  result := frmMain.Diagram[0].Canvas.TextWidth(String(Caption)) + 2 *
-    StdTextIndent;
+  result := frmMain.Diagram[0].Canvas.TextWidth(String(Caption));
   if NT = ntHead then
-    result := StdWidth
+  begin
+    result := StdWidth;
+    Exit;
+  end
   else if NT = ntIF then
-    // result := ;
-
+    result := result * 2;
+  result := result + 2 * StdTextIndent;
 end;
 
 function GetCycleBlockCaptionHeight(const ID: Integer): Integer;
@@ -164,7 +166,9 @@ end;
 procedure PaintIFBlock(var Block: TImage);
 var
   Tr: Array [1 .. 3] of TPoint;
+  Caption: TDataString;
 begin
+  Caption := GetNodeCaption(Block.Tag);
   with Block, Picture.Bitmap do
   begin
     Block.Canvas.Rectangle(0, 0, Width, Height);
@@ -172,6 +176,16 @@ begin
     Tr[2].Create(Width, 0);
     Tr[3].Create(Width div 2, Height);
     Canvas.Polygon(Tr);
+
+    Block.Canvas.TextOut((Width - Canvas.TextWidth(String(Caption))) div 2,
+      (Height - Canvas.TextHeight(String(Caption))) div 2 - StdHeight div 6,
+      String(Caption));
+
+    Block.Canvas.TextOut((Width div 2 - Canvas.TextWidth('1')) div 2,
+      StdHeight + (Height div 2 - Canvas.TextHeight(String(Caption))) div 2, '1');
+
+    Block.Canvas.TextOut((3 * Width div 2 - Canvas.TextWidth('0')) div 2,
+      StdHeight + (Height div 2 - Canvas.TextHeight(String(Caption))) div 2, '0');
   end;
 end;
 

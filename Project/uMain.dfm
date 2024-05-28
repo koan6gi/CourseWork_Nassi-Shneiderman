@@ -64,8 +64,7 @@ object frmMain: TfrmMain
     TabOrder = 1
     OnMouseWheelDown = ScrollBoxMainMouseWheelDown
     OnMouseWheelUp = ScrollBoxMainMouseWheelUp
-    ExplicitWidth = 910
-    ExplicitHeight = 477
+    ExplicitTop = 39
   end
   object ActionListMain: TActionList
     Images = ImageListMain
@@ -154,6 +153,7 @@ object frmMain: TfrmMain
       Category = 'Diagram'
       Caption = #1059#1076#1072#1083#1080#1090#1100' '#1073#1083#1086#1082
       ImageIndex = 9
+      ShortCut = 8238
       OnExecute = actDiagramDeleteBlockExecute
     end
     object actDiagramEditBlockCaption: TAction
