@@ -64,7 +64,8 @@ object frmMain: TfrmMain
     TabOrder = 1
     OnMouseWheelDown = ScrollBoxMainMouseWheelDown
     OnMouseWheelUp = ScrollBoxMainMouseWheelUp
-    ExplicitTop = 39
+    ExplicitWidth = 910
+    ExplicitHeight = 477
   end
   object ActionListMain: TActionList
     Images = ImageListMain
@@ -129,31 +130,35 @@ object frmMain: TfrmMain
       Category = 'Diagram'
       Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1092#1091#1085#1082#1094#1080#1086#1085#1072#1083#1100#1085#1099#1081' '#1073#1083#1086#1082
       ImageIndex = 9
+      ShortCut = 112
       OnExecute = actDiagramAddProcessExecute
     end
     object actDiagramAddIF: TAction
       Category = 'Diagram'
       Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1073#1083#1086#1082' '#1088#1077#1096#1077#1085#1080#1103
       ImageIndex = 9
+      ShortCut = 113
       OnExecute = actDiagramAddIFExecute
     end
     object actDiagramAddWhile: TAction
       Category = 'Diagram'
       Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1073#1083#1086#1082' '#1094#1080#1082#1083#1072' '#1089' '#1087#1088#1077#1076#1091#1089#1083#1086#1074#1080#1077#1084
       ImageIndex = 9
+      ShortCut = 114
       OnExecute = actDiagramAddWhileExecute
     end
     object actDiagramAddRepeat: TAction
       Category = 'Diagram'
       Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1073#1083#1086#1082' '#1094#1080#1082#1083#1072' '#1089' '#1087#1086#1089#1090#1091#1089#1083#1086#1074#1080#1077#1084
       ImageIndex = 9
+      ShortCut = 115
       OnExecute = actDiagramAddRepeatExecute
     end
     object actDiagramDeleteBlock: TAction
       Category = 'Diagram'
       Caption = #1059#1076#1072#1083#1080#1090#1100' '#1073#1083#1086#1082
       ImageIndex = 9
-      ShortCut = 8238
+      ShortCut = 46
       OnExecute = actDiagramDeleteBlockExecute
     end
     object actDiagramEditBlockCaption: TAction
@@ -637,5 +642,13 @@ object frmMain: TfrmMain
       800300000000000080030000000000008003002F000000008007FF4700000000
       800FFF4F00000000801FFF1F0000000000000000000000000000000000000000
       000000000000}
+  end
+  object OpenDialogMain: TOpenDialog
+    Left = 792
+    Top = 225
+  end
+  object SaveDialogMain: TSaveDialog
+    Left = 800
+    Top = 305
   end
 end

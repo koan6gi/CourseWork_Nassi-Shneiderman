@@ -7,7 +7,7 @@ uses
   System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, System.Actions, Vcl.ActnList,
   Vcl.ToolWin, Vcl.ComCtrls, Vcl.Menus, System.ImageList, Vcl.ImgList,
-  uTreeRoutine, uEditInfoForm, Vcl.ExtCtrls, Vcl.StdCtrls;
+  uTreeRoutine, uEditInfoForm, Vcl.ExtCtrls, Vcl.StdCtrls, uFileRoutine;
 
 type
   TfrmMain = class(TForm)
@@ -56,6 +56,8 @@ type
     ScrollBoxMain: TScrollBox;
     actDiagramEditBlockCaption: TAction;
     menuDiagramEditBlockCaption: TMenuItem;
+    OpenDialogMain: TOpenDialog;
+    SaveDialogMain: TSaveDialog;
     procedure BlockDblClick(Sender: TObject);
     procedure BlockClick(Sender: TObject);
     procedure actDiagramAddProcessExecute(Sender: TObject);
@@ -182,10 +184,12 @@ begin
       String(Caption));
 
     Block.Canvas.TextOut((Width div 2 - Canvas.TextWidth('1')) div 2,
-      StdHeight + (Height div 2 - Canvas.TextHeight(String(Caption))) div 2, '1');
+      StdHeight + (Height div 2 - Canvas.TextHeight(String(Caption)))
+      div 2, '1');
 
     Block.Canvas.TextOut((3 * Width div 2 - Canvas.TextWidth('0')) div 2,
-      StdHeight + (Height div 2 - Canvas.TextHeight(String(Caption))) div 2, '0');
+      StdHeight + (Height div 2 - Canvas.TextHeight(String(Caption)))
+      div 2, '0');
   end;
 end;
 

@@ -106,6 +106,7 @@
             <Form>frmEditInfo</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="uFileRoutine.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
