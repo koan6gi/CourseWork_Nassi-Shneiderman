@@ -7,17 +7,17 @@ Type
 
   PAdrOfNode = ^TNode;
 
-  TDataString = String[200];
+  TDataString = String[120];
 
   TData = record
-    ID: Integer;
+    ID: UInt64;
     nodeType: TNodeType;
     caption: TDataString;
     case TNodeType of
       ntHead:
-        (maxID: Integer);
+        (maxID: UInt64);
       ntProcess, ntWhile, ntRepeat, ntIF:
-        (PotentialDiagramWidth: Integer);
+        (PotentialDiagramWidth: UInt64);
   end;
 
   TIfBlock = record
@@ -58,8 +58,10 @@ Type
 var
   TreeDiagram: PAdrOfNode;
 
+procedure CreateHead(var Tree: PAdrOfNode);
 procedure CorrectDiagramWidth(const ID, NewBlockWidth: Integer);
 procedure DeleteNode(const ID: Integer);
+procedure FreeDiagram(var Diagram: PAdrOfNode);
 function GetArrOfLen_ID(const ID: Integer): TArrOfLen_ID;
 function GetArrOfNodeKids(const ID: Integer): TArrOfInd;
 function GetNodeType(const ID: Integer): TNodeType;
@@ -88,7 +90,6 @@ uses uMain;
 type
   TInsertBlockHeadInTree = procedure(var Branch: PAdrOfNode);
 
-procedure FreeDiagram(var Diagram: PAdrOfNode); forward;
 function GetArrOfNextElementsID(const ID: Integer): TArrOfInd; forward;
 function GetBranchLength(Tree: PAdrOfNode): Integer; forward;
 function GetNode(const ID: Integer): PAdrOfNode; forward;
@@ -735,8 +736,6 @@ begin
 end;
 
 initialization
-
-CreateHead(TreeDiagram);
 
 finalization
 

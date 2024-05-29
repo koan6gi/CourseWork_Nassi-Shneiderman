@@ -89,24 +89,13 @@ object frmMain: TfrmMain
       Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100
       ImageIndex = 2
       ShortCut = 16467
+      OnExecute = actFileSaveExecute
     end
     object actFileSaveAs: TAction
       Category = 'File'
       Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1082#1072#1082'...'
       ImageIndex = 3
       ShortCut = 49235
-    end
-    object actEditUnDo: TAction
-      Category = 'Edit'
-      Caption = #1054#1090#1084#1077#1085#1080#1090#1100
-      ImageIndex = 4
-      ShortCut = 16474
-    end
-    object actEditReDo: TAction
-      Category = 'Edit'
-      Caption = #1055#1086#1074#1090#1086#1088#1080#1090#1100
-      ImageIndex = 5
-      ShortCut = 49242
     end
     object actEditCut: TAction
       Category = 'Edit'
@@ -165,6 +154,7 @@ object frmMain: TfrmMain
       Category = 'Diagram'
       Caption = #1056#1077#1076#1072#1082#1090#1080#1088#1086#1074#1072#1090#1100' '#1085#1072#1076#1087#1080#1089#1100
       ImageIndex = 9
+      ShortCut = 16453
       OnExecute = actDiagramEditBlockCaptionExecute
     end
   end
@@ -190,10 +180,14 @@ object frmMain: TfrmMain
     object menuEdit: TMenuItem
       Caption = #1055#1088#1072#1074#1082#1072
       object menuEditUnDo: TMenuItem
-        Action = actEditUnDo
+        Caption = #1054#1090#1084#1077#1085#1080#1090#1100
+        ImageIndex = 4
+        ShortCut = 16474
       end
       object menuEditReDo: TMenuItem
-        Action = actEditReDo
+        Caption = #1055#1086#1074#1090#1086#1088#1080#1090#1100
+        ImageIndex = 5
+        ShortCut = 49242
       end
       object menuSeparator1: TMenuItem
         Caption = '-'
@@ -644,6 +638,8 @@ object frmMain: TfrmMain
       000000000000}
   end
   object OpenDialogMain: TOpenDialog
+    Filter = '|.tree'
+    Options = [ofHideReadOnly, ofPathMustExist, ofFileMustExist, ofEnableSizing]
     Left = 792
     Top = 225
   end

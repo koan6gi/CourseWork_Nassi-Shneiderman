@@ -10,6 +10,8 @@ uses
   uTreeRoutine, uEditInfoForm, Vcl.ExtCtrls, Vcl.StdCtrls, uFileRoutine;
 
 type
+  TArrOfBlock = array of TImage;
+
   TfrmMain = class(TForm)
     ActionListMain: TActionList;
     MainMenu: TMainMenu;
@@ -18,8 +20,6 @@ type
     actFileOpen: TAction;
     actFileSave: TAction;
     actFileSaveAs: TAction;
-    actEditUnDo: TAction;
-    actEditReDo: TAction;
     actEditCut: TAction;
     actEditCopy: TAction;
     actEditPaste: TAction;
@@ -72,11 +72,12 @@ type
     procedure ScrollBoxMainMouseWheelUp(Sender: TObject; Shift: TShiftState;
       MousePos: TPoint; var Handled: Boolean);
     procedure actDiagramDeleteBlockExecute(Sender: TObject);
+    procedure actFileSaveExecute(Sender: TObject);
   private
-    Diagram: array of TImage;
-    CurrBlockID: Integer;
-  public
 
+  public
+    Diagram: TArrOfBlock;
+    CurrBlockID: Integer;
   end;
 
 const
@@ -98,6 +99,11 @@ procedure SetBlockWidth(const ID, NewWidth: Integer);
 procedure SetBlockLeft(const ID, NewLeft: Integer);
 function GetBlockLeft(const ID: Integer): Integer;
 function GetBlockWidth(const ID: Integer): Integer;
+function GetDiagramWidth(): Integer;
+function GetDiagramHeight(): Integer;
+procedure DrawDiagram();
+procedure AllocateBlock(var Block: TImage);
+function GetBlock(const ID: Integer): TImage;
 
 implementation
 
@@ -110,8 +116,6 @@ const
 
 Type
   TPaintBlock = procedure(var Block: TImage);
-
-function GetBlock(const ID: Integer): TImage; forward;
 
 function GetDiagramWidth(): Integer;
 begin
@@ -138,7 +142,7 @@ begin
     Exit;
   end
   else if NT = ntIF then
-    result := result * 2;
+    result := round(result * 1.5);
   result := result + 2 * StdTextIndent;
 end;
 
@@ -180,7 +184,7 @@ begin
     Canvas.Polygon(Tr);
 
     Block.Canvas.TextOut((Width - Canvas.TextWidth(String(Caption))) div 2,
-      (Height - Canvas.TextHeight(String(Caption))) div 2 - StdHeight div 6,
+      (Height - Canvas.TextHeight(String(Caption))) div 2 - StdHeight div 2,
       String(Caption));
 
     Block.Canvas.TextOut((Width div 2 - Canvas.TextWidth('1')) div 2,
@@ -227,7 +231,7 @@ begin
   end;
 end;
 
-Procedure PaintHead(Var Block: TImage);
+procedure PaintHead(Var Block: TImage);
 begin
   with Block, Picture.Bitmap do
   begin
@@ -649,8 +653,6 @@ end;
 
 procedure ChangeBlockInArray(ID: Integer; Info: TDataString); forward;
 
-procedure DrawDiagram(); forward;
-
 procedure DeleteBlock(const ID: Integer);
 var
   ArrToShift: TArrOfLen_ID;
@@ -669,8 +671,6 @@ begin
   frmMain.CurrBlockID := 0;
   DrawDiagram();
 end;
-
-procedure AllocateBlock(var Block: TImage); forward;
 
 procedure ChangeBlockInArray(ID: Integer; Info: TDataString);
 var
@@ -734,6 +734,7 @@ end;
 
 procedure TfrmMain.frmMainCreate(Sender: TObject);
 begin
+  CreateHead(TreeDiagram);
   CurrBlockID := 0;
   SetLength(frmMain.Diagram, 1);
   CreateBlock(frmMain.Diagram[0], ntHead);
@@ -820,6 +821,11 @@ begin
   if bExit then
     Exit;
   ChangeBlockInArray(CurrBlockID, Caption);
+end;
+
+procedure TfrmMain.actFileSaveExecute(Sender: TObject);
+begin
+  SaveDiagram();
 end;
 
 procedure TfrmMain.ActionListMainUpdate(Action: TBasicAction;
