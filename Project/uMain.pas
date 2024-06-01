@@ -10,8 +10,6 @@ uses
   uTreeRoutine, uEditInfoForm, Vcl.ExtCtrls, Vcl.StdCtrls, uFileRoutine;
 
 type
-  TArrOfBlock = array of TImage;
-
   TfrmMain = class(TForm)
     ActionListMain: TActionList;
     MainMenu: TMainMenu;
@@ -49,10 +47,9 @@ type
     OpenDialogMain: TOpenDialog;
     SaveDialogMain: TSaveDialog;
     ToolButton1: TToolButton;
-    ToolButton2: TToolButton;
-    ToolButton3: TToolButton;
-    ToolButton4: TToolButton;
-    ImageListOff: TImageList;
+    tbDiagramEditBlock: TToolButton;
+    tbSeparator2: TToolButton;
+    tbDiagramDeleteBlock: TToolButton;
     procedure BlockDblClick(Sender: TObject);
     procedure BlockClick(Sender: TObject);
     procedure actDiagramAddProcessExecute(Sender: TObject);
@@ -68,6 +65,7 @@ type
       MousePos: TPoint; var Handled: Boolean);
     procedure actDiagramDeleteBlockExecute(Sender: TObject);
     procedure actFileSaveExecute(Sender: TObject);
+    procedure actFileOpenExecute(Sender: TObject);
   private
 
   public
@@ -99,8 +97,11 @@ function GetDiagramHeight(): Integer;
 procedure DrawDiagram();
 procedure AllocateBlock(var Block: TImage);
 function GetBlock(const ID: Integer): TImage;
+procedure InsertBlockInArray(const ParentID, ID: Integer; const NT: TNodeType);
+procedure ChangeBlockInArray(ID: Integer; Info: TDataString);
 
 implementation
+
 uses FileCtrl;
 
 {$R *.dfm}
@@ -109,6 +110,7 @@ const
   EditInfoMessages: array [TNodeType] of String = ('', 'Введите текст',
     'Введите условие', 'Введите условие входа в цикл',
     'Введите условие выхода из цикла');
+  MaxWidthSize = 2000;
 
 Type
   TPaintBlock = procedure(var Block: TImage);
@@ -371,9 +373,8 @@ begin
   end;
 end;
 
-procedure CreateBlock(var Block: TImage; const NT: TNodeType);
-var
-  CountOfBranch: Integer;
+procedure CreateBlock(var Block: TImage; const ID: Integer;
+  const NT: TNodeType);
 begin
   Block := TImage.Create(frmMain.ScrollBoxMain);
   Block.Parent := frmMain.ScrollBoxMain;
@@ -383,23 +384,7 @@ begin
     Canvas.Pen.Color := clBlack;
     Canvas.Brush.Color := clWhite;
 
-    // SetBounds(StdLeft, StdTop, StdWidth, StdHeight);
-
-    // Block.Picture.Bitmap.Height := StdHeight;
-    // Block.Picture.Bitmap.Width := StdWidth;
-
-    case NT of
-      ntIF:
-        CountOfBranch := 2;
-      ntWhile:
-        CountOfBranch := 1;
-      ntRepeat:
-        CountOfBranch := 1;
-    else
-      CountOfBranch := 0;
-    end;
-
-    Tag := GetNodeMaxID - CountOfBranch;
+    Tag := ID;
     if NT <> ntHead then
       OnDblClick := frmMain.BlockDblClick;
     OnClick := frmMain.BlockClick;
@@ -436,8 +421,24 @@ begin
   Block.Picture.Bitmap.Height := NewHeight;
 end;
 
+// procedure InsertInArr(var Block: TImage);
+// var
+// i, ID: Integer;
+// begin
+// ID := Block.Tag;
+// with frmMain do
+// for I := High(Diagram) downto Low(Diagram) do
+// begin
+// if ID > Diagram[i].Tag then
+// begin
+// Insert(Block, Diagram, i);
+// end;
+// end;
+//
+// end;
+
 procedure CorrectBlock(var Block: TImage; const NT: TNodeType;
-  const ParentID: Integer);
+  const ParentID, ID: Integer);
 var
   ParentWidth, ParentHeight, ParentLeft, ParentTop, KidWidth: Integer;
   Parent, tempHead: TImage;
@@ -450,7 +451,7 @@ begin
   ParentTop := Parent.Top;
   ParentType := GetNodeType(ParentID);
 
-  CreateBlock(Block, NT);
+  CreateBlock(Block, ID, NT);
   Block.left := ParentLeft;
   if ParentType = ntHead then
     Block.Top := ParentTop
@@ -469,22 +470,13 @@ begin
     ntIF:
       begin
         // Настройка размеров
-        if ParentWidth < StdIfWidth then
-        begin
-          Block.Width := StdIfWidth;
-        end
-        else
-        begin
-          Block.Width := ParentWidth;
-        end;
         Block.Picture.Bitmap.Width := Block.Width;
         Block.Height := Block.Height + 2 * StdHeight;
         Block.Picture.Bitmap.Height := 2 * StdHeight;
 
         // Создание подветвей
-        KidWidth := Block.Width div 3;
-        CreateBlock(tempHead, ntHead);
-        tempHead.Tag := Block.Tag + 1;
+        KidWidth := Block.Width div 2;
+        CreateBlock(tempHead, ID + 1, ntHead);
         tempHead.Top := Block.Top + 2 * StdHeight;
         tempHead.left := ParentLeft;
         tempHead.Height := StdHeight;
@@ -493,8 +485,7 @@ begin
         tempHead.Picture.Bitmap.Width := KidWidth;
         Insert(tempHead, frmMain.Diagram, Length(frmMain.Diagram));
 
-        CreateBlock(tempHead, ntHead);
-        tempHead.Tag := Block.Tag + 2;
+        CreateBlock(tempHead, ID + 2, ntHead);
         tempHead.Top := Block.Top + 2 * StdHeight;
         tempHead.left := ParentLeft + KidWidth;
         tempHead.Height := StdHeight;
@@ -506,22 +497,13 @@ begin
     ntWhile:
       begin
         // Настройка размеров
-        if ParentWidth < StdWidth then
-        begin
-          Block.Width := StdWidth;
-        end
-        else
-        begin
-          Block.Width := ParentWidth;
-        end;
         Block.Picture.Bitmap.Width := Block.Width;
         Block.Height := Block.Height + StdHeight;
         Block.Picture.Bitmap.Height := Block.Height;
 
         // Создание подветвей
         KidWidth := Block.Width - StdWidthCycleBoard;
-        CreateBlock(tempHead, ntHead);
-        tempHead.Tag := Block.Tag + 1;
+        CreateBlock(tempHead, ID + 1, ntHead);
         tempHead.Top := Block.Top + StdHeight;
         tempHead.left := ParentLeft + StdWidthCycleBoard;
         tempHead.Height := StdHeight;
@@ -533,22 +515,14 @@ begin
     ntRepeat:
       begin
         // Настройка размеров
-        if ParentWidth < StdWidth then
-        begin
-          Block.Width := StdWidth;
-        end
-        else
-        begin
-          Block.Width := ParentWidth;
-        end;
+
         Block.Picture.Bitmap.Width := Block.Width;
         Block.Height := Block.Height + StdHeight;
         Block.Picture.Bitmap.Height := Block.Height;
 
         // Создание подветвей
         KidWidth := Block.Width - StdWidthCycleBoard;
-        CreateBlock(tempHead, ntHead);
-        tempHead.Tag := Block.Tag + 1;
+        CreateBlock(tempHead, ID + 1, ntHead);
         tempHead.Top := Block.Top;
         tempHead.left := ParentLeft + StdWidthCycleBoard;
         tempHead.Height := StdHeight;
@@ -600,18 +574,17 @@ begin
   end;
 end;
 
-procedure InsertBlockInArray(const ID: Integer; const NT: TNodeType);
+procedure InsertBlockInArray(const ParentID, ID: Integer; const NT: TNodeType);
 var
   ArrToShift: TArrOfLen_ID;
   Block: TImage;
-  ParentID, IDOfNewBlock: Integer;
 begin
-  ParentID := ID;
   PrepareArrToShift(ParentID, ArrToShift);
-  CorrectBlock(Block, NT, ParentID);
-  IDOfNewBlock := Block.Tag;
-  CorrectDiagramWidth(IDOfNewBlock, GetBlockWidth(IDOfNewBlock));
-  ShiftBlocks(IDOfNewBlock, ArrToShift);
+  CorrectBlock(Block, NT, ParentID, ID);
+  with frmMain do
+    Qsort(Diagram, Low(Diagram), High(Diagram));
+  CorrectDiagramWidth(ID, GetBlockWidth(ID));
+  ShiftBlocks(ID, ArrToShift);
 end;
 
 procedure DeleteBlockInArray(const ID: Integer);
@@ -646,8 +619,6 @@ begin
     SetBlockHeight(A[I], 0);
   end;
 end;
-
-procedure ChangeBlockInArray(ID: Integer; Info: TDataString); forward;
 
 procedure DeleteBlock(const ID: Integer);
 var
@@ -689,6 +660,7 @@ begin
   end;
   SetNodePotentialDiagramWidth(ID, NewWidth);
   Block := GetBlock(ID);
+  DrawDiagram();
   AllocateBlock(Block);
 end;
 
@@ -705,11 +677,28 @@ begin
 end;
 
 procedure InsertBlockInDiagram(const NT: TNodeType);
+var
+  IDOfNewBlock: Integer;
 begin
+  if GetDiagramWidth() >= MaxWidthSize then
+  begin
+    if (NT = ntIF) or (NT = ntWhile) or (NT = ntRepeat) then
+    begin
+      ShowMessage
+        ('Вставка ветвления и циклов приостановлена. Подумайте над оптимизацией алгоритма.');
+      Exit;
+    end;
+  end;
   InsertNode(frmMain.CurrBlockID, NT,
     TDataString(frmEditInfo.LabeledEditMain.Text));
 
-  InsertBlockInArray(frmMain.CurrBlockID, NT);
+  IDOfNewBlock := GetNodeMaxID();
+  if NT = ntIF then
+    Dec(IDOfNewBlock, 2)
+  else if (NT = ntWhile) or (NT = ntRepeat) then
+    Dec(IDOfNewBlock);
+
+  InsertBlockInArray(frmMain.CurrBlockID, IDOfNewBlock, NT);
 
   frmMain.BlockClick(GetBlock(GetNodeMaxID()));
 end;
@@ -733,7 +722,7 @@ begin
   CreateHead(TreeDiagram);
   CurrBlockID := 0;
   SetLength(frmMain.Diagram, 1);
-  CreateBlock(frmMain.Diagram[0], ntHead);
+  CreateBlock(frmMain.Diagram[0], 0, ntHead);
   with frmMain.Diagram[0] do
   begin
     left := StdLeft;
@@ -801,6 +790,7 @@ end;
 
 procedure TfrmMain.actDiagramDeleteBlockExecute(Sender: TObject);
 begin
+  ScrollBoxMain.HorzScrollBar.Position := 0;
   DeleteBlock(CurrBlockID);
 end;
 
@@ -816,7 +806,23 @@ begin
   SetEditCaption('');
   if bExit then
     Exit;
+  ScrollBoxMain.HorzScrollBar.Position := 0;
   ChangeBlockInArray(CurrBlockID, Caption);
+end;
+
+procedure TfrmMain.actFileOpenExecute(Sender: TObject);
+var
+  IsOpenEnable: Boolean;
+begin
+  IsOpenEnable := OpenDialogMain.Execute;
+  if IsOpenEnable then
+  begin
+    SetOpenPath(OpenDialogMain.FileName);
+    OpenDiagram();
+    DrawDiagram();
+    SetSavePath(OpenDialogMain.FileName);
+    SaveDialogMain.FileName := OpenDialogMain.FileName;
+  end;
 end;
 
 procedure TfrmMain.actFileSaveExecute(Sender: TObject);
@@ -829,7 +835,7 @@ begin
   end
   else
   begin
-    IsSaveEnable := True;
+    IsSaveEnable := true;
   end;
 
   if IsSaveEnable then
@@ -842,7 +848,7 @@ begin
     end;
 
     SaveDiagram();
-    ShowMessage('Сохранено');
+    ShowMessage('Изменения сохранены.');
   end;
 
 end;
@@ -861,6 +867,8 @@ begin
   actDiagramAddWhile.Enabled := actDiagramAddProcess.Enabled;
   actDiagramAddRepeat.Enabled := actDiagramAddProcess.Enabled;
 
+  actFileSave.Enabled := Length(Diagram) > 1;
+  actFileSaveAs.Enabled := actFileSave.Enabled;
 end;
 
 procedure TfrmMain.BlockClick(Sender: TObject);

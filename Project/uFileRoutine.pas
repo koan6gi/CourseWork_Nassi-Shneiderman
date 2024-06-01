@@ -2,8 +2,12 @@ unit uFileRoutine;
 
 interface
 
+uses
+  Winapi.Windows, Vcl.ExtCtrls, Vcl.Graphics;
+
 Type
   TFilePath = String;
+  TArrOfBlock = array of TImage;
 
 var
   SavePath: TFilePath = '';
@@ -11,11 +15,13 @@ var
 
 procedure SaveDiagram();
 procedure SetSavePath(const NewSavePath: String);
+procedure OpenDiagram();
+procedure SetOpenPath(const NewOpenPath: String);
+Procedure Qsort(Var Data: TArrOfBlock; L, R: Integer);
 
 implementation
 
-uses uMain, uTreeRoutine, Winapi.Windows, Vcl.Graphics, Vcl.Imaging.pngimage,
-  Vcl.ExtCtrls;
+uses uMain, uTreeRoutine, Vcl.Imaging.pngimage;
 
 Type
   TNodeFile = File of TData;
@@ -23,20 +29,63 @@ Type
 var
   NodeFile: TNodeFile;
 
+procedure Swap(var A, B: TImage);
+var
+  temp: TImage;
+begin
+  temp := A;
+  A := B;
+  B := temp;
+end;
+
+Procedure Qsort(Var Data: TArrOfBlock; L, R: Integer);
+  Procedure QuickSort(L, R: Integer);
+  var
+    I, J, X: Integer;
+  begin
+    I := L;
+    J := R;
+    X := Data[(L + R) div 2].Tag;
+    Repeat
+      While Data[I].Tag < X do
+      begin
+        Inc(I);
+      end;
+      While Data[J].Tag > X do
+      begin
+        Dec(J);
+      end;
+      If I <= J then
+      begin
+        Swap(Data[I], Data[J]);
+        Inc(I);
+        Dec(J);
+      end;
+    until I > J;
+    If J > L then
+      QuickSort(L, J);
+    If I < R then
+      QuickSort(I, R);
+  end;
+
+begin
+  QuickSort(L, R);
+end;
+
 procedure CalcLengthBranchs(Tree: PAdrOfNode);
 var
   CountBlockOfBranch: ^Integer;
 begin
-  CountBlockOfBranch := @Tree.data.maxID;
+  CountBlockOfBranch := @Tree.Data.maxID;
   CountBlockOfBranch^ := 0;
   while Tree <> nil do
   begin
     Inc(CountBlockOfBranch^);
-    if (Tree.data.nodeType = ntWhile) or (Tree.data.nodeType = ntRepeat) then
+    if (Tree.Data.nodeType = ntWhile) or (Tree.Data.nodeType = ntRepeat) then
     begin
       CalcLengthBranchs(Tree.subNode.cycleBlock.cycleBranch);
     end
-    else if (Tree.data.nodeType = ntIf) then
+    else if (Tree.Data.nodeType = ntIf) then
     begin
       CalcLengthBranchs(Tree.subNode.ifBlock.trueBranch);
       CalcLengthBranchs(Tree.subNode.ifBlock.falseBranch);
@@ -48,15 +97,15 @@ end;
 
 procedure PrepareTreeToSave();
 begin
-  TreeDiagram.data.ID := TreeDiagram.data.maxID;
-  TreeDiagram.data.maxID := 0;
+  TreeDiagram.Data.ID := TreeDiagram.Data.maxID;
+  TreeDiagram.Data.maxID := 0;
   CalcLengthBranchs(TreeDiagram);
 end;
 
 procedure ReturnRightTreeState();
 begin
-  TreeDiagram.data.maxID := TreeDiagram.data.ID;
-  TreeDiagram.data.ID := 0;
+  TreeDiagram.Data.maxID := TreeDiagram.Data.ID;
+  TreeDiagram.Data.ID := 0;
 end;
 
 procedure SaveTree(var NodeFile: TNodeFile; const SavePath: TFilePath);
@@ -64,12 +113,12 @@ procedure SaveTree(var NodeFile: TNodeFile; const SavePath: TFilePath);
   begin
     while Tree <> nil do
     begin
-      write(NodeFile, Tree.data);
-      if (Tree.data.nodeType = ntWhile) or (Tree.data.nodeType = ntRepeat) then
+      write(NodeFile, Tree.Data);
+      if (Tree.Data.nodeType = ntWhile) or (Tree.Data.nodeType = ntRepeat) then
       begin
         WriteTree(Tree.subNode.cycleBlock.cycleBranch);
       end
-      else if (Tree.data.nodeType = ntIf) then
+      else if (Tree.Data.nodeType = ntIf) then
       begin
         WriteTree(Tree.subNode.ifBlock.trueBranch);
         WriteTree(Tree.subNode.ifBlock.falseBranch);
@@ -80,7 +129,7 @@ procedure SaveTree(var NodeFile: TNodeFile; const SavePath: TFilePath);
 
 begin
   PrepareTreeToSave();
-  AssignFile(NodeFile, SavePath + '\Diagram.tree');
+  AssignFile(NodeFile, SavePath + '.tree');
   Rewrite(NodeFile);
   WriteTree(TreeDiagram);
   CloseFile(NodeFile);
@@ -105,7 +154,7 @@ begin
   end;
   Png := TPngImage.Create;
   Png.Assign(Bmp);
-  Png.SaveToFile(SavePath + '\Diagram.png');
+  Png.SaveToFile(SavePath + '.png');
   Block := GetBlock(frmMain.CurrBlockID);
   AllocateBlock(Block);
   Bmp.Free;
@@ -121,41 +170,99 @@ procedure ReadBranch(Tree: PAdrOfNode);
 var
   I: Integer;
 begin
-  for I := 2 to Tree.data.maxID do
+  for I := 2 to Tree.Data.maxID do
   begin
     New(Tree.next);
     Tree := Tree.next;
-    read(NodeFile, Tree.data);
+    read(NodeFile, Tree.Data);
     Tree.next := nil;
 
-    if (Tree.data.nodeType = ntWhile) or (Tree.data.nodeType = ntRepeat) then
+    if (Tree.Data.nodeType = ntWhile) or (Tree.Data.nodeType = ntRepeat) then
     begin
       New(Tree.subNode.cycleBlock.cycleBranch);
-      read(NodeFile, Tree.subNode.cycleBlock.cycleBranch.data);
+      read(NodeFile, Tree.subNode.cycleBlock.cycleBranch.Data);
       ReadBranch(Tree.subNode.cycleBlock.cycleBranch);
     end
-    else if (Tree.data.nodeType = ntIf) then
+    else if (Tree.Data.nodeType = ntIf) then
     begin
       New(Tree.subNode.ifBlock.trueBranch);
-      read(NodeFile, Tree.subNode.ifBlock.trueBranch.data);
+      read(NodeFile, Tree.subNode.ifBlock.trueBranch.Data);
       ReadBranch(Tree.subNode.ifBlock.trueBranch);
 
       New(Tree.subNode.ifBlock.falseBranch);
-      read(NodeFile, Tree.subNode.ifBlock.falseBranch.data);
+      read(NodeFile, Tree.subNode.ifBlock.falseBranch.Data);
       ReadBranch(Tree.subNode.ifBlock.falseBranch);
     end;
 
   end;
 end;
 
+procedure InsertBranch(Tree: PAdrOfNode; ParentID: Integer);
+// var
+// HInd: Integer;
+begin
+  While Tree <> nil do
+  begin
+    InsertBlockInArray(ParentID, Tree.Data.ID, Tree.Data.nodeType);
+
+    ChangeBlockInArray(Tree.Data.ID, Tree.Data.caption);
+    with frmMain do
+    begin
+      // HInd := High(Diagram);
+      case Tree.Data.nodeType of
+        ntHead, ntProcess:
+          begin
+            // Diagram[HInd].Tag := Tree.Data.ID;
+          end;
+        ntWhile, ntRepeat:
+          begin
+            // Diagram[HInd - 1].Tag := Tree.Data.ID;
+            // Diagram[HInd].Tag := Tree.subNode.cycleBlock.cycleBranch.Data.ID;
+            InsertBranch(Tree.subNode.cycleBlock.cycleBranch.next,
+              Tree.subNode.cycleBlock.cycleBranch.Data.ID);
+          end;
+        ntIf:
+          begin
+            // Diagram[HInd - 2].Tag := Tree.Data.ID;
+            // Diagram[HInd - 1].Tag := Tree.subNode.ifBlock.trueBranch.Data.ID;
+            // Diagram[HInd].Tag := Tree.subNode.ifBlock.falseBranch.Data.ID;
+            InsertBranch(Tree.subNode.ifBlock.trueBranch.next,
+              Tree.subNode.ifBlock.trueBranch.Data.ID);
+            InsertBranch(Tree.subNode.ifBlock.falseBranch.next,
+              Tree.subNode.ifBlock.falseBranch.Data.ID);
+          end;
+      end;
+    end;
+    ParentID := Tree.Data.ID;
+    Tree := Tree.next;
+  end;
+  // with frmMain do
+  // Qsort(Diagram, Low(Diagram), High(Diagram));
+end;
+
+procedure InsertDiagram();
+begin
+  InsertBranch(TreeDiagram.next, 0);
+
+end;
+
 procedure ReadTree();
 
 begin
-  Assign(NodeFile, OpenPath + '\Diagram.tree');
+  AssignFile(NodeFile, OpenPath);
   Reset(NodeFile);
-  Read(NodeFile, TreeDiagram.data);
+  Read(NodeFile, TreeDiagram.Data);
   ReadBranch(TreeDiagram);
   CloseFile(NodeFile);
+  TreeDiagram.Data.maxID := TreeDiagram.Data.ID;
+  TreeDiagram.Data.ID := 0;
+
+end;
+
+procedure OpenDiagram();
+begin
+  ReadTree();
+  InsertDiagram();
 end;
 
 procedure SetSavePath(const NewSavePath: String);
@@ -165,12 +272,17 @@ begin
   SavePath := NewSavePath;
   for I := High(SavePath) downto Low(SavePath) do
   begin
-    if NewSavePath[I] = '\' then
+    if NewSavePath[I] = '.' then
     begin
-      SetLength(SavePath, I);
+      SetLength(SavePath, I - 1);
       break;
     end;
   end;
+end;
+
+procedure SetOpenPath(const NewOpenPath: String);
+begin
+  OpenPath := NewOpenPath;
 end;
 
 end.
