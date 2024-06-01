@@ -6,10 +6,11 @@ Type
   TFilePath = String;
 
 var
-  SavePath: TFilePath = '.';
+  SavePath: TFilePath = '';
   OpenPath: TFilePath = '';
 
 procedure SaveDiagram();
+procedure SetSavePath(const NewSavePath: String);
 
 implementation
 
@@ -155,6 +156,21 @@ begin
   Read(NodeFile, TreeDiagram.data);
   ReadBranch(TreeDiagram);
   CloseFile(NodeFile);
+end;
+
+procedure SetSavePath(const NewSavePath: String);
+var
+  I: Integer;
+begin
+  SavePath := NewSavePath;
+  for I := High(SavePath) downto Low(SavePath) do
+  begin
+    if NewSavePath[I] = '\' then
+    begin
+      SetLength(SavePath, I);
+      break;
+    end;
+  end;
 end;
 
 end.

@@ -20,9 +20,6 @@ type
     actFileOpen: TAction;
     actFileSave: TAction;
     actFileSaveAs: TAction;
-    actEditCut: TAction;
-    actEditCopy: TAction;
-    actEditPaste: TAction;
     actDiagramAddProcess: TAction;
     actDiagramAddIF: TAction;
     actDiagramAddWhile: TAction;
@@ -33,13 +30,6 @@ type
     menuFileOpen: TMenuItem;
     menuFileSave: TMenuItem;
     menuFileSaveAs: TMenuItem;
-    menuEdit: TMenuItem;
-    menuEditUnDo: TMenuItem;
-    menuEditReDo: TMenuItem;
-    menuSeparator1: TMenuItem;
-    menuEditCut: TMenuItem;
-    menuEditCopy: TMenuItem;
-    menuEditPaste: TMenuItem;
     menuDiagram: TMenuItem;
     menuDiagramAdd: TMenuItem;
     menuDiagramAddProcess: TMenuItem;
@@ -58,6 +48,11 @@ type
     menuDiagramEditBlockCaption: TMenuItem;
     OpenDialogMain: TOpenDialog;
     SaveDialogMain: TSaveDialog;
+    ToolButton1: TToolButton;
+    ToolButton2: TToolButton;
+    ToolButton3: TToolButton;
+    ToolButton4: TToolButton;
+    ImageListOff: TImageList;
     procedure BlockDblClick(Sender: TObject);
     procedure BlockClick(Sender: TObject);
     procedure actDiagramAddProcessExecute(Sender: TObject);
@@ -106,6 +101,7 @@ procedure AllocateBlock(var Block: TImage);
 function GetBlock(const ID: Integer): TImage;
 
 implementation
+uses FileCtrl;
 
 {$R *.dfm}
 
@@ -824,8 +820,31 @@ begin
 end;
 
 procedure TfrmMain.actFileSaveExecute(Sender: TObject);
+var
+  IsSaveEnable: Boolean;
 begin
-  SaveDiagram();
+  if SavePath = '' then
+  begin
+    IsSaveEnable := SaveDialogMain.Execute;
+  end
+  else
+  begin
+    IsSaveEnable := True;
+  end;
+
+  if IsSaveEnable then
+  begin
+    SetSavePath(SaveDialogMain.FileName);
+    with ScrollBoxMain do
+    begin
+      VertScrollBar.Position := 0;
+      HorzScrollBar.Position := 0;
+    end;
+
+    SaveDiagram();
+    ShowMessage('Сохранено');
+  end;
+
 end;
 
 procedure TfrmMain.ActionListMainUpdate(Action: TBasicAction;
