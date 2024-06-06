@@ -12,6 +12,8 @@ object frmMain: TfrmMain
   Font.Name = 'Segoe UI'
   Font.Style = []
   Menu = MainMenu
+  OnClose = FormClose
+  OnCloseQuery = FormCloseQuery
   OnCreate = frmMainCreate
   TextHeight = 15
   object ToolBarMain: TToolBar
@@ -89,7 +91,8 @@ object frmMain: TfrmMain
     TabOrder = 1
     OnMouseWheelDown = ScrollBoxMainMouseWheelDown
     OnMouseWheelUp = ScrollBoxMainMouseWheelUp
-    ExplicitTop = 25
+    ExplicitWidth = 910
+    ExplicitHeight = 477
   end
   object ActionListMain: TActionList
     Images = ImageListMain
@@ -98,9 +101,10 @@ object frmMain: TfrmMain
     Top = 36
     object actFileNew: TAction
       Category = 'File'
-      Caption = #1057#1086#1079#1076#1072#1090#1100
+      Caption = #1053#1086#1074#1072#1103' '#1089#1093#1077#1084#1072
       ImageIndex = 0
       ShortCut = 16462
+      OnExecute = actFileNewExecute
     end
     object actFileOpen: TAction
       Category = 'File'
@@ -121,6 +125,7 @@ object frmMain: TfrmMain
       Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1082#1072#1082'...'
       ImageIndex = 3
       ShortCut = 49235
+      OnExecute = actFileSaveAsExecute
     end
     object actDiagramAddProcess: TAction
       Category = 'Diagram'
@@ -628,8 +633,8 @@ object frmMain: TfrmMain
     Top = 225
   end
   object SaveDialogMain: TSaveDialog
-    Filter = '|*.tree||*.*'
-    Options = [ofHideReadOnly, ofFileMustExist, ofEnableSizing]
+    Filter = '|*.tree'
+    Options = [ofHideReadOnly, ofPathMustExist, ofFileMustExist, ofEnableSizing]
     Left = 784
     Top = 297
   end

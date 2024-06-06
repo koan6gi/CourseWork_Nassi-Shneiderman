@@ -1,20 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899.12.30 00:00:00.000.635,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uEditInfoForm.pas=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uEditForm.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.002,D:\OneDrive\Документы\Embarcadero\Studio\Projects\Project1.dproj=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\CourseWork.dproj</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.858,D:\OneDrive\Документы\Embarcadero\Studio\Projects\Unit1.pas=D:\OneDrive\Документы\Embarcadero\Studio\Projects\uMain.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.427,D:\OneDrive\Документы\Embarcadero\Studio\Projects\uMain.pas=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uMain.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.432,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uEditForm.dfm=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\Unit1.dfm</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.635,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uEditInfoForm.dfm=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uEditForm.dfm</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.427,D:\OneDrive\Документы\Embarcadero\Studio\Projects\uMain.dfm=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uMain.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.432,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\Unit1.dfm=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uEditForm.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.858,D:\OneDrive\Документы\Embarcadero\Studio\Projects\uMain.pas=D:\OneDrive\Документы\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.427,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uMain.pas=D:\OneDrive\Документы\Embarcadero\Studio\Projects\uMain.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.427,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uMain.dfm=D:\OneDrive\Документы\Embarcadero\Studio\Projects\uMain.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.635,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uEditForm.dfm=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uEditInfoForm.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.858,D:\OneDrive\Документы\Embarcadero\Studio\Projects\uMain.dfm=D:\OneDrive\Документы\Embarcadero\Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.304,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uTreeRoutine.pas=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.689,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uFileRoutine.pas=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\Unit1.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.609,=D:\OneDrive\Документы\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.635,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uEditForm.pas=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uEditInfoForm.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.002,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\CourseWork.dproj=D:\OneDrive\Документы\Embarcadero\Studio\Projects\Project1.dproj</Transaction>
     <Transaction>1899.12.30 00:00:00.000.598,=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.443,=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.304,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\Unit1.pas=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uTreeRoutine.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.432,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\Unit1.pas=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uEditForm.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.888,=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.858,D:\OneDrive\Документы\Embarcadero\Studio\Projects\Unit1.dfm=D:\OneDrive\Документы\Embarcadero\Studio\Projects\uMain.dfm</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.432,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uEditForm.pas=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.689,D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\Unit1.pas=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\uFileRoutine.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.443,=D:\Университет\ОАиП\Курсовая\Nassi-Shneiderman diagram\Project\Unit1.pas</Transaction>
   </Transactions>
 </BorlandProject>

@@ -180,16 +180,19 @@ begin
     if (Tree.Data.nodeType = ntWhile) or (Tree.Data.nodeType = ntRepeat) then
     begin
       New(Tree.subNode.cycleBlock.cycleBranch);
+      Tree.subNode.cycleBlock.cycleBranch.next := nil;
       read(NodeFile, Tree.subNode.cycleBlock.cycleBranch.Data);
       ReadBranch(Tree.subNode.cycleBlock.cycleBranch);
     end
     else if (Tree.Data.nodeType = ntIf) then
     begin
       New(Tree.subNode.ifBlock.trueBranch);
+      Tree.subNode.ifBlock.trueBranch.next := nil;
       read(NodeFile, Tree.subNode.ifBlock.trueBranch.Data);
       ReadBranch(Tree.subNode.ifBlock.trueBranch);
 
       New(Tree.subNode.ifBlock.falseBranch);
+      Tree.subNode.ifBlock.falseBranch.next := nil;
       read(NodeFile, Tree.subNode.ifBlock.falseBranch.Data);
       ReadBranch(Tree.subNode.ifBlock.falseBranch);
     end;
@@ -198,8 +201,6 @@ begin
 end;
 
 procedure InsertBranch(Tree: PAdrOfNode; ParentID: Integer);
-// var
-// HInd: Integer;
 begin
   While Tree <> nil do
   begin
@@ -208,24 +209,15 @@ begin
     ChangeBlockInArray(Tree.Data.ID, Tree.Data.caption);
     with frmMain do
     begin
-      // HInd := High(Diagram);
       case Tree.Data.nodeType of
-        ntHead, ntProcess:
-          begin
-            // Diagram[HInd].Tag := Tree.Data.ID;
-          end;
+
         ntWhile, ntRepeat:
           begin
-            // Diagram[HInd - 1].Tag := Tree.Data.ID;
-            // Diagram[HInd].Tag := Tree.subNode.cycleBlock.cycleBranch.Data.ID;
             InsertBranch(Tree.subNode.cycleBlock.cycleBranch.next,
               Tree.subNode.cycleBlock.cycleBranch.Data.ID);
           end;
         ntIf:
           begin
-            // Diagram[HInd - 2].Tag := Tree.Data.ID;
-            // Diagram[HInd - 1].Tag := Tree.subNode.ifBlock.trueBranch.Data.ID;
-            // Diagram[HInd].Tag := Tree.subNode.ifBlock.falseBranch.Data.ID;
             InsertBranch(Tree.subNode.ifBlock.trueBranch.next,
               Tree.subNode.ifBlock.trueBranch.Data.ID);
             InsertBranch(Tree.subNode.ifBlock.falseBranch.next,
@@ -236,8 +228,6 @@ begin
     ParentID := Tree.Data.ID;
     Tree := Tree.next;
   end;
-  // with frmMain do
-  // Qsort(Diagram, Low(Diagram), High(Diagram));
 end;
 
 procedure InsertDiagram();

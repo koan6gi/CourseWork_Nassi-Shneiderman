@@ -4,7 +4,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
-  System.Classes, Vcl.Graphics,
+  System.Classes, System.UITypes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, System.Actions, Vcl.ActnList,
   Vcl.ToolWin, Vcl.ComCtrls, Vcl.Menus, System.ImageList, Vcl.ImgList,
   uTreeRoutine, uEditInfoForm, Vcl.ExtCtrls, Vcl.StdCtrls, uFileRoutine;
@@ -66,8 +66,12 @@ type
     procedure actDiagramDeleteBlockExecute(Sender: TObject);
     procedure actFileSaveExecute(Sender: TObject);
     procedure actFileOpenExecute(Sender: TObject);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+    procedure actFileSaveAsExecute(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure actFileNewExecute(Sender: TObject);
   private
-
+    IsDiagramHaveChanged: Boolean;
   public
     Diagram: TArrOfBlock;
     CurrBlockID: Integer;
@@ -110,7 +114,7 @@ const
   EditInfoMessages: array [TNodeType] of String = ('', 'Введите текст',
     'Введите условие', 'Введите условие входа в цикл',
     'Введите условие выхода из цикла');
-  MaxWidthSize = 2000;
+  MaxWidthSize = 4500;
 
 Type
   TPaintBlock = procedure(var Block: TImage);
@@ -421,22 +425,6 @@ begin
   Block.Picture.Bitmap.Height := NewHeight;
 end;
 
-// procedure InsertInArr(var Block: TImage);
-// var
-// i, ID: Integer;
-// begin
-// ID := Block.Tag;
-// with frmMain do
-// for I := High(Diagram) downto Low(Diagram) do
-// begin
-// if ID > Diagram[i].Tag then
-// begin
-// Insert(Block, Diagram, i);
-// end;
-// end;
-//
-// end;
-
 procedure CorrectBlock(var Block: TImage; const NT: TNodeType;
   const ParentID, ID: Integer);
 var
@@ -685,7 +673,7 @@ begin
     if (NT = ntIF) or (NT = ntWhile) or (NT = ntRepeat) then
     begin
       ShowMessage
-        ('Вставка ветвления и циклов приостановлена. Подумайте над оптимизацией алгоритма.');
+        ('Схема слишком широкая. Вставка ветвлений и циклов приостановлена. Подумайте над оптимизацией алгоритма.');
       Exit;
     end;
   end;
@@ -715,10 +703,17 @@ begin
   end;
 end;
 
+function ShowSaveQuestion(): TmodalResult;
+begin
+  result := MessageDlg('Сохранить изменения?', TMsgDlgType.mtConfirmation,
+    mbYesNoCancel, 0);
+end;
+
 { TfrmMain }
 
 procedure TfrmMain.frmMainCreate(Sender: TObject);
 begin
+  IsDiagramHaveChanged := false;
   CreateHead(TreeDiagram);
   CurrBlockID := 0;
   SetLength(frmMain.Diagram, 1);
@@ -768,28 +763,65 @@ begin
     frmMain.actDiagramEditBlockCaptionExecute(Block);
 end;
 
+procedure TfrmMain.FormClose(Sender: TObject; var Action: TCloseAction);
+var
+  I: Integer;
+begin
+  for I := Low(Diagram) to High(Diagram) do
+  begin
+    Diagram[I].Free;
+  end;
+  SetLength(Diagram, 0);
+  FreeDiagram(TreeDiagram);
+end;
+
+procedure TfrmMain.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+var
+  buttonSelected: Integer;
+begin
+  CanClose := true;
+  if IsDiagramHaveChanged then
+  begin
+    buttonSelected := ShowSaveQuestion();
+    if buttonSelected = mrYes then
+    begin
+      actFileSaveExecute(actFileSave);
+    end
+    else if buttonSelected = mrCancel then
+    begin
+      CanClose := false;
+    end;
+  end;
+
+end;
+
 procedure TfrmMain.actDiagramAddProcessExecute(Sender: TObject);
 begin
+  IsDiagramHaveChanged := true;
   InsertBlockInDiagram(ntProcess);
 end;
 
 procedure TfrmMain.actDiagramAddIFExecute(Sender: TObject);
 begin
+  IsDiagramHaveChanged := true;
   InsertBlockInDiagram(ntIF);
 end;
 
 procedure TfrmMain.actDiagramAddRepeatExecute(Sender: TObject);
 begin
+  IsDiagramHaveChanged := true;
   InsertBlockInDiagram(ntRepeat);
 end;
 
 procedure TfrmMain.actDiagramAddWhileExecute(Sender: TObject);
 begin
+  IsDiagramHaveChanged := true;
   InsertBlockInDiagram(ntWhile);
 end;
 
 procedure TfrmMain.actDiagramDeleteBlockExecute(Sender: TObject);
 begin
+  IsDiagramHaveChanged := true;
   ScrollBoxMain.HorzScrollBar.Position := 0;
   DeleteBlock(CurrBlockID);
 end;
@@ -801,28 +833,69 @@ var
 begin
   SetEditLable(EditInfoMessages[GetNodeType(CurrBlockID)]);
   SetEditCaption(GetNodeCaption(CurrBlockID));
-  bExit := frmEditInfo.ShowModal <> mrOK;
+  bExit := frmEditInfo.ShowModal <> mrOk;
   Caption := GetEditCaption();
   SetEditCaption('');
   if bExit then
     Exit;
   ScrollBoxMain.HorzScrollBar.Position := 0;
   ChangeBlockInArray(CurrBlockID, Caption);
+  IsDiagramHaveChanged := true;
+end;
+
+procedure TfrmMain.actFileNewExecute(Sender: TObject);
+var
+  IsSave: Integer;
+  Act: TCloseAction;
+begin
+  if IsDiagramHaveChanged then
+  begin
+    IsSave := ShowSaveQuestion();
+    if IsSave = mrCancel then
+      Exit;
+    if IsSave = mrYes then
+      actFileSaveExecute(actFileSave);
+  end;
+
+  FormClose(Sender, Act);
+  frmMainCreate(Sender);
 end;
 
 procedure TfrmMain.actFileOpenExecute(Sender: TObject);
 var
   IsOpenEnable: Boolean;
+  IsSave: Integer;
+  Act: TCloseAction;
 begin
+  if ((SavePath <> '') or (Length(Diagram) > 1)) and IsDiagramHaveChanged then
+  begin
+    IsSave := ShowSaveQuestion();
+    if IsSave = mrCancel then
+      Exit;
+    if IsSave = mrYes then
+      actFileSaveExecute(actFileSave);
+  end;
+
   IsOpenEnable := OpenDialogMain.Execute;
+
   if IsOpenEnable then
   begin
+    IsDiagramHaveChanged := false;
+    FormClose(Sender, Act);
+    frmMainCreate(Sender);
     SetOpenPath(OpenDialogMain.FileName);
     OpenDiagram();
     DrawDiagram();
     SetSavePath(OpenDialogMain.FileName);
     SaveDialogMain.FileName := OpenDialogMain.FileName;
   end;
+
+end;
+
+procedure TfrmMain.actFileSaveAsExecute(Sender: TObject);
+begin
+  SetSavePath('');
+  actFileSaveExecute(actFileSave);
 end;
 
 procedure TfrmMain.actFileSaveExecute(Sender: TObject);
@@ -849,6 +922,7 @@ begin
 
     SaveDiagram();
     ShowMessage('Изменения сохранены.');
+    IsDiagramHaveChanged := false;
   end;
 
 end;
@@ -868,7 +942,7 @@ begin
   actDiagramAddRepeat.Enabled := actDiagramAddProcess.Enabled;
 
   actFileSave.Enabled := Length(Diagram) > 1;
-  actFileSaveAs.Enabled := actFileSave.Enabled;
+  actFileSaveAs.Enabled := actFileSave.Enabled and (SavePath <> '');
 end;
 
 procedure TfrmMain.BlockClick(Sender: TObject);

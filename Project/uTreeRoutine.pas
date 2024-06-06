@@ -735,10 +735,4 @@ begin
     BlockWidth);
 end;
 
-initialization
-
-finalization
-
-FreeDiagram(TreeDiagram);
-
 end.
