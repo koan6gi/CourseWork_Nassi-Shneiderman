@@ -98,10 +98,15 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
+        <DCCReference Include="uTreeRoutine.pas"/>
         <DCCReference Include="uMain.pas">
             <Form>frmMain</Form>
+        </DCCReference>
+        <DCCReference Include="uEditInfoForm.pas">
+            <Form>frmEditInfo</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="uFileRoutine.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
